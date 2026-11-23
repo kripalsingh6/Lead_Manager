@@ -501,6 +501,68 @@
   background-color: #f8fafc;
 }
 
+/* Time Range Dropdown */
+.time-range-dropdown-wrapper {
+  position: relative;
+}
+
+.btn-secondary.active-filter {
+  border-color: #c7d2fe;
+  background-color: #f5f3ff;
+  color: #4f46e5;
+  font-weight: 600;
+}
+
+.time-range-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 170px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  padding: 6px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.time-range-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.time-range-item:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.time-range-item.active {
+  background-color: #ede9fe;
+  color: #5846f6;
+  font-weight: 600;
+}
+
+.time-range-check {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5846f6;
+}
+
 .btn-primary {
   display: flex;
   align-items: center;
@@ -1431,6 +1493,33 @@
   background-color: #0f172a;
   color: #ffffff;
   border-left: 4px solid #ef4444;
+}
+
+.toast-processing,
+.toast-info {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-left: 4px solid #6366f1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #818cf8;
+  border-radius: 50%;
+  animation: toastSpin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes toastSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .w-full { width: 100%; }

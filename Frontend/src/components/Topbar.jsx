@@ -8,7 +8,8 @@ export const Topbar = ({
   onLogout,
   onSeedSampleData,
   isSeeding,
-  onNavigateToLanding
+  onNavigateToLanding,
+  onProcessingAction
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const displayName = getEffectiveDisplayName(user);
@@ -16,8 +17,12 @@ export const Topbar = ({
   return (
     <header className="topbar">
       {/* Breadcrumbs */}
-      <div className="breadcrumbs">
-        <span className="crumb-parent">Workspace</span>
+      <div
+        className="breadcrumbs"
+        style={{ cursor: 'pointer' }}
+        onClick={() => onProcessingAction && onProcessingAction('Dashboard Navigation')}
+      >
+        <span className="crumb-parent">Dashboard</span>
         <span className="crumb-divider">/</span>
         <span className="crumb-current">Lead Manager</span>
       </div>
@@ -35,7 +40,11 @@ export const Topbar = ({
         </button>
 
         {/* Notifications */}
-        <button className="btn-icon" aria-label="Notifications">
+        <button
+          className="btn-icon"
+          aria-label="Notifications"
+          onClick={() => onProcessingAction && onProcessingAction('Notifications')}
+        >
           <Bell size={18} />
           <span className="notification-dot"></span>
         </button>
@@ -73,7 +82,7 @@ export const Topbar = ({
                   }}
                 >
                   <Globe size={16} />
-                  <span>Landing Page</span>
+                  <span>Dashboard</span>
                 </button>
               )}
               {user ? (

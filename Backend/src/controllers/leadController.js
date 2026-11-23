@@ -70,10 +70,59 @@ const SAMPLE_LEADS = [
 
 const ensureUserHasLeads = async (userId) => {
   const count = await Lead.count({ where: { userId } });
+  const now = Date.now();
   if (count === 0) {
-    const records = SAMPLE_LEADS.map((l) => ({ ...l, userId }));
+    const records = SAMPLE_LEADS.map((l, index) => {
+      let daysAgo = 0;
+      if (index >= 6 && index < 18) daysAgo = (index % 5) + 1; // 1-5 days ago
+      else if (index >= 18 && index < 26) daysAgo = (index % 15) + 8; // 8-22 days ago
+      else if (index >= 26) daysAgo = (index % 10) + 35; // 35+ days ago
+      const createdAt = new Date(now - daysAgo * 24 * 60 * 60 * 1000);
+      return { ...l, userId, createdAt, updatedAt: createdAt };
+    });
     await Lead.bulkCreate(records);
+  } else {
+    // If all existing leads share the exact same second, spread them once for rich filtering
+    const sampleLead = await Lead.findOne({ where: { userId } });
+    if (sampleLead) {
+      const sameCount = await Lead.count({
+        where: {
+          userId,
+          createdAt: sampleLead.createdAt
+        }
+      });
+      if (sameCount >= 20) {
+        const allUserLeads = await Lead.findAll({ where: { userId }, order: [['id', 'ASC']] });
+        for (let i = 0; i < allUserLeads.length; i++) {
+          let daysAgo = 0;
+          if (i >= 6 && i < 18) daysAgo = (i % 5) + 1;
+          else if (i >= 18 && i < 26) daysAgo = (i % 15) + 8;
+          else if (i >= 26) daysAgo = (i % 10) + 35;
+          const adjustedDate = new Date(now - daysAgo * 24 * 60 * 60 * 1000);
+          allUserLeads[i].setDataValue('createdAt', adjustedDate);
+          await allUserLeads[i].save({ silent: true });
+        }
+      }
+    }
   }
+};
+
+const buildTimeRangeCondition = (timeRange) => {
+  if (!timeRange || timeRange === 'all') return null;
+  const now = new Date();
+  if (timeRange === 'today') {
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return { [Op.gte]: startOfDay };
+  }
+  if (timeRange === '7d') {
+    const past7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return { [Op.gte]: past7d };
+  }
+  if (timeRange === '30d') {
+    const past30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    return { [Op.gte]: past30d };
+  }
+  return null;
 };
 
 /**
@@ -92,13 +141,18 @@ const escapeLikeString = (str) => {
  */
 export const getAllLeads = asyncHandler(async (req, res) => {
   await ensureUserHasLeads(req.user.id);
-  const { page, limit, search, status, source, sortBy, order } = req.query;
+  const { page, limit, search, status, source, sortBy, order, timeRange } = req.query;
 
   // ── Build WHERE clause (always user-scoped) ─
   const where = { userId: req.user.id };
 
   if (status) where.status = status;
   if (source) where.source = source;
+
+  const timeCondition = buildTimeRangeCondition(timeRange);
+  if (timeCondition) {
+    where.createdAt = timeCondition;
+  }
 
   if (search) {
     const safeSearch = escapeLikeString(search);
@@ -226,9 +280,17 @@ export const deleteLead = asyncHandler(async (req, res) => {
  */
 export const getDashboardStats = asyncHandler(async (req, res) => {
   await ensureUserHasLeads(req.user.id);
+  const { timeRange } = req.query;
+
+  const where = { userId: req.user.id };
+  const timeCondition = buildTimeRangeCondition(timeRange);
+  if (timeCondition) {
+    where.createdAt = timeCondition;
+  }
+
   const [statusCounts, sourceCounts, totalCount] = await Promise.all([
     Lead.findAll({
-      where: { userId: req.user.id },
+      where,
       attributes: [
         'status',
         [sequelize.fn('COUNT', sequelize.col('id')), 'count']
@@ -237,7 +299,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       raw: true
     }),
     Lead.findAll({
-      where: { userId: req.user.id },
+      where,
       attributes: [
         'source',
         [sequelize.fn('COUNT', sequelize.col('id')), 'count']
@@ -245,7 +307,7 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       group: ['source'],
       raw: true
     }),
-    Lead.count({ where: { userId: req.user.id } })
+    Lead.count({ where })
   ]);
 
   // Ensure every status key is present (even if 0)

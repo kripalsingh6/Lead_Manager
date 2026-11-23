@@ -12,11 +12,15 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 }) => {
+export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, onProcessingAction }) => {
   return (
     <aside className="sidebar">
       {/* Brand Header */}
-      <div className="sidebar-brand">
+      <div
+        className="sidebar-brand"
+        style={{ cursor: 'pointer' }}
+        onClick={() => onProcessingAction && onProcessingAction('Dashboard Navigation')}
+      >
         <div className="brand-logo">
           <svg
             className="pulse-icon"
@@ -33,10 +37,14 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 })
         </div>
       </div>
 
-      {/* Workspace Selector */}
-      <div className="workspace-selector">
+      {/* Workspace / Dashboard Selector */}
+      <div
+        className="workspace-selector"
+        style={{ cursor: 'pointer' }}
+        onClick={() => onProcessingAction && onProcessingAction('Dashboard Switcher')}
+      >
         <div className="workspace-info">
-          <span className="workspace-name">Acme workspace</span>
+          <span className="workspace-name">Lead Dashboard</span>
           <span className="workspace-plan">Pro plan</span>
         </div>
         <ChevronDown size={16} className="text-muted" />
@@ -44,7 +52,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 })
 
       {/* Main Navigation */}
       <div className="sidebar-section">
-        <span className="section-label">WORKSPACE</span>
+        <span className="section-label">DASHBOARD</span>
         <nav className="nav-menu">
           <button
             className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
@@ -56,7 +64,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 })
 
           <button
             className={`nav-item ${activeTab === 'monitors' ? 'active' : ''}`}
-            onClick={() => onTabChange && onTabChange('monitors')}
+            onClick={() => (onProcessingAction ? onProcessingAction('Monitors') : onTabChange && onTabChange('monitors'))}
           >
             <Activity size={18} />
             <span>Monitors</span>
@@ -65,7 +73,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 })
 
           <button
             className={`nav-item ${activeTab === 'infrastructure' ? 'active' : ''}`}
-            onClick={() => onTabChange && onTabChange('infrastructure')}
+            onClick={() => (onProcessingAction ? onProcessingAction('Infrastructure') : onTabChange && onTabChange('infrastructure'))}
           >
             <Cpu size={18} />
             <span>Infrastructure</span>
@@ -73,7 +81,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 })
 
           <button
             className={`nav-item ${activeTab === 'services' ? 'active' : ''}`}
-            onClick={() => onTabChange && onTabChange('services')}
+            onClick={() => (onProcessingAction ? onProcessingAction('Services') : onTabChange && onTabChange('services'))}
           >
             <Server size={18} />
             <span>Services</span>
@@ -81,7 +89,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 })
 
           <button
             className={`nav-item ${activeTab === 'incidents' ? 'active' : ''}`}
-            onClick={() => onTabChange && onTabChange('incidents')}
+            onClick={() => (onProcessingAction ? onProcessingAction('Incidents') : onTabChange && onTabChange('incidents'))}
           >
             <AlertTriangle size={18} />
             <span>Incidents</span>
@@ -90,7 +98,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 })
 
           <button
             className={`nav-item ${activeTab === 'activity' ? 'active' : ''}`}
-            onClick={() => onTabChange && onTabChange('activity')}
+            onClick={() => (onProcessingAction ? onProcessingAction('Activity Log') : onTabChange && onTabChange('activity'))}
           >
             <History size={18} />
             <span>Activity log</span>
@@ -108,23 +116,40 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 })
           <div className="progress-bar">
             <div className="progress-fill" style={{ width: '48%' }}></div>
           </div>
-          <a href="#plan" className="usage-link" onClick={(e) => e.preventDefault()}>
+          <a
+            href="#plan"
+            className="usage-link"
+            onClick={(e) => {
+              e.preventDefault();
+              onProcessingAction && onProcessingAction('Manage Plan');
+            }}
+          >
             Manage your plan <ExternalLink size={12} />
           </a>
         </div>
 
         <nav className="footer-nav">
-          <button className="footer-nav-item">
+          <button
+            className="footer-nav-item"
+            onClick={() => onProcessingAction && onProcessingAction('Settings')}
+          >
             <Settings size={16} />
             <span>Settings</span>
           </button>
-          <button className="footer-nav-item">
+          <button
+            className="footer-nav-item"
+            onClick={() => onProcessingAction && onProcessingAction('Help & Documentation')}
+          >
             <HelpCircle size={16} />
             <span>Help & documentation</span>
           </button>
         </nav>
 
-        <div className="system-status">
+        <div
+          className="system-status"
+          style={{ cursor: 'pointer' }}
+          onClick={() => onProcessingAction && onProcessingAction('System Status')}
+        >
           <span className="status-indicator online"></span>
           <span>All systems operational</span>
         </div>

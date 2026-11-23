@@ -61,6 +61,7 @@ export const queryLeadsSchema = Joi.object({
   search: Joi.string().trim().max(100).allow('').optional(),
   status: Joi.string().valid(...LEAD_STATUSES).optional(),
   source: Joi.string().valid(...LEAD_SOURCES).optional(),
+  timeRange: Joi.string().valid('all', 'today', '7d', '30d').default('all'),
   sortBy: Joi.string()
     .valid('createdAt', 'name', 'email', 'company', 'status', 'source')
     .default('createdAt'),

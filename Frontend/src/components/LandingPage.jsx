@@ -24,7 +24,7 @@ import {
   Code2
 } from 'lucide-react';
 
-export const LandingPage = ({ onGetStarted, onLogin, currentUser, onGoToDashboard }) => {
+export const LandingPage = ({ onGetStarted, onLogin, currentUser, onGoToDashboard, onProcessingAction }) => {
   const [email, setEmail] = useState('');
 
   const handleSubmit = (e) => {
@@ -37,11 +37,15 @@ export const LandingPage = ({ onGetStarted, onLogin, currentUser, onGoToDashboar
       {/* ── Top Navigation Bar ─────────────────────── */}
       <header className="landing-navbar">
         <div className="landing-nav-container">
-          <div className="landing-brand">
+          <div
+            className="landing-brand"
+            style={{ cursor: 'pointer' }}
+            onClick={() => onProcessingAction && onProcessingAction('Dashboard Navigation')}
+          >
             <div className="landing-logo-icon">
               <Building2 size={20} color="#ffffff" />
             </div>
-            <span className="landing-brand-text">LEAD MANAGER</span>
+            <span className="landing-brand-text">LEAD DASHBOARD</span>
           </div>
 
           <div className="landing-nav-actions">
@@ -58,7 +62,7 @@ export const LandingPage = ({ onGetStarted, onLogin, currentUser, onGoToDashboar
                   className="btn-landing-nav-primary"
                   onClick={onGoToDashboard}
                 >
-                  Go to Workspace <ArrowRight size={15} style={{ marginLeft: 6 }} />
+                  Go to Dashboard <ArrowRight size={15} style={{ marginLeft: 6 }} />
                 </button>
               </div>
             ) : (
@@ -472,7 +476,7 @@ export const LandingPage = ({ onGetStarted, onLogin, currentUser, onGoToDashboar
           {/* Bottom Call to Action Banner */}
           <div className="why-cta-banner">
             <div>
-              <h3 className="cta-banner-title">Launch your Sales Lead Workspace</h3>
+              <h3 className="cta-banner-title">Launch your Sales Lead Dashboard</h3>
               <p className="cta-banner-subtitle">
                 Test the complete solution live: capture new leads, update pipeline statuses, and experience zero-latency search.
               </p>
@@ -487,24 +491,48 @@ export const LandingPage = ({ onGetStarted, onLogin, currentUser, onGoToDashboar
         </div>
       </section>
 
-      {/* ── Landing Footer ─────────────────────────── */}
+      {/* ── Dashboard Footer ─────────────────────────── */}
       <footer className="landing-footer">
         <div className="footer-container">
           <div className="footer-brand">
-            <span className="footer-logo">LEAD MANAGER</span>
+            <span className="footer-logo">LEAD DASHBOARD</span>
             <span className="footer-copyright">
               Screening Assignment Implementation • Meru Technosoft Pvt. Ltd.
             </span>
           </div>
           <div className="footer-links">
-            <a href="#features">Core Features</a>
-            <a href="#bonus">Bonus Capabilities</a>
-            <a href="#techstack">Tech Stack</a>
+            <a
+              href="#features"
+              onClick={(e) => {
+                e.preventDefault();
+                onProcessingAction ? onProcessingAction('Core Features') : null;
+              }}
+            >
+              Core Features
+            </a>
+            <a
+              href="#bonus"
+              onClick={(e) => {
+                e.preventDefault();
+                onProcessingAction ? onProcessingAction('Bonus Capabilities') : null;
+              }}
+            >
+              Bonus Capabilities
+            </a>
+            <a
+              href="#techstack"
+              onClick={(e) => {
+                e.preventDefault();
+                onProcessingAction ? onProcessingAction('Tech Stack') : null;
+              }}
+            >
+              Tech Stack
+            </a>
             <button
               onClick={onLogin}
               className="footer-login-link"
             >
-              Sign In to Workspace
+              Sign In to Dashboard
             </button>
           </div>
         </div>

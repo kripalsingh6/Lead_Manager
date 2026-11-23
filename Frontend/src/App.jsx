@@ -19,7 +19,7 @@ import {
   getEffectiveDisplayName,
   formatNameFromEmail
 } from './api/client';
-import { Calendar, Plus } from 'lucide-react';
+import { Calendar, Plus, ChevronDown } from 'lucide-react';
 import './App.css';
 
 // Realistic sample leads directly from the assignment screenshots (32 total)
@@ -92,8 +92,17 @@ export function App() {
   const [limit, setLimit] = useState(8);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [timeRange, setTimeRange] = useState('all');
+  const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
   const [sortBy, setSortBy] = useState('createdAt');
   const [order, setOrder] = useState('DESC');
+
+  const TIME_RANGE_OPTIONS = [
+    { value: 'all', label: 'All time' },
+    { value: 'today', label: 'Today' },
+    { value: '7d', label: 'Last 7 days' },
+    { value: '30d', label: 'Last 30 days' }
+  ];
 
   // ── Modal State ───────────────────────────
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -104,8 +113,12 @@ export function App() {
 
   const showToast = (message, type = 'success') => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 4000);
+    setTimeout(() => setNotification(null), 3500);
   };
+
+  const handleProcessingAction = useCallback((featureName = 'Feature') => {
+    showToast(`Processing: ${featureName} is loading...`, 'processing');
+  }, []);
 
   // ── URL Path Synchronizer & Router ───────
   const navigateTo = useCallback((path, replace = false) => {
@@ -247,14 +260,15 @@ export function App() {
         page: currentPage,
         limit,
         sortBy,
-        order
+        order,
+        timeRange
       });
       if (search.trim()) params.append('search', search.trim());
       if (statusFilter) params.append('status', statusFilter);
 
       const [leadsRes, statsRes] = await Promise.all([
         apiRequest(`/leads?${params.toString()}`),
-        apiRequest('/leads/dashboard/stats').catch(() => null)
+        apiRequest(`/leads/dashboard/stats?timeRange=${timeRange}`).catch(() => null)
       ]);
 
       setLeads(leadsRes.data || []);
@@ -268,7 +282,19 @@ export function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, limit, search, statusFilter, sortBy, order]);
+  }, [currentPage, limit, search, statusFilter, sortBy, order, timeRange]);
+
+  // Close time dropdown on outside click
+  useEffect(() => {
+    if (!isTimeDropdownOpen) return;
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.time-range-dropdown-wrapper')) {
+        setIsTimeDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isTimeDropdownOpen]);
 
   useEffect(() => {
     if (getStoredToken() && currentView === 'dashboard') {
@@ -413,6 +439,7 @@ export function App() {
       <div className="app-container">
         {notification && (
           <div className={`toast-notification toast-${notification.type}`}>
+            {notification.type === 'processing' && <span className="toast-spinner"></span>}
             <span>{notification.message}</span>
           </div>
         )}
@@ -429,12 +456,13 @@ export function App() {
     );
   }
 
-  // ── 2. Render Datadog-Style Modern Landing Page (Unauthenticated / Landing View) ──
+  // ── 2. Render Modern Dashboard Landing View (Unauthenticated / Initial View) ──
   if (currentView === 'landing' || !getStoredToken()) {
     return (
       <div className="app-container">
         {notification && (
           <div className={`toast-notification toast-${notification.type}`}>
+            {notification.type === 'processing' && <span className="toast-spinner"></span>}
             <span>{notification.message}</span>
           </div>
         )}
@@ -458,6 +486,7 @@ export function App() {
             navigateTo('/workspace');
             fetchLeads();
           }}
+          onProcessingAction={handleProcessingAction}
         />
         <AuthModal
           isOpen={authModalConfig.isOpen}
@@ -475,6 +504,7 @@ export function App() {
       {/* Toast Notification */}
       {notification && (
         <div className={`toast-notification toast-${notification.type}`}>
+          {notification.type === 'processing' && <span className="toast-spinner"></span>}
           <span>{notification.message}</span>
         </div>
       )}
@@ -482,7 +512,10 @@ export function App() {
       {/* Main Workspace Row: Sidebar + Main Content (Sidebar stops above the footer) */}
       <div className="workspace-main-row">
         {/* Dark Sidebar */}
-        <Sidebar leadsCount={totalItems} />
+        <Sidebar
+          leadsCount={totalItems}
+          onProcessingAction={handleProcessingAction}
+        />
 
         {/* Main Content Area */}
         <div className="main-content">
@@ -499,6 +532,7 @@ export function App() {
           onSeedSampleData={handleSeedSampleData}
           isSeeding={isSeeding}
           onNavigateToLanding={() => navigateTo('/')}
+          onProcessingAction={handleProcessingAction}
         />
 
         <main className="dashboard-body">
@@ -515,10 +549,43 @@ export function App() {
             </div>
 
             <div className="header-actions">
-              <button className="btn-secondary">
-                <Calendar size={16} />
-                <span>All time</span>
-              </button>
+              {/* Interactive Time Range Dropdown (Option A) */}
+              <div className="time-range-dropdown-wrapper">
+                <button
+                  type="button"
+                  className={`btn-secondary ${timeRange !== 'all' ? 'active-filter' : ''}`}
+                  onClick={() => setIsTimeDropdownOpen((prev) => !prev)}
+                  title="Filter leads and metrics by time range"
+                >
+                  <Calendar size={16} />
+                  <span>
+                    {TIME_RANGE_OPTIONS.find((opt) => opt.value === timeRange)?.label || 'All time'}
+                  </span>
+                  <ChevronDown size={14} className="text-muted" style={{ marginLeft: 2 }} />
+                </button>
+
+                {isTimeDropdownOpen && (
+                  <div className="time-range-dropdown-menu">
+                    {TIME_RANGE_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`time-range-item ${timeRange === option.value ? 'active' : ''}`}
+                        onClick={() => {
+                          setTimeRange(option.value);
+                          setCurrentPage(1);
+                          setIsTimeDropdownOpen(false);
+                          showToast(`Applied time filter: ${option.label}`);
+                        }}
+                      >
+                        <span>{option.label}</span>
+                        {timeRange === option.value && <span className="time-range-check">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <button
                 className="btn-primary"
                 onClick={() => setIsAddModalOpen(true)}
@@ -623,7 +690,7 @@ export function App() {
             onClick={() => navigateTo('/')}
             className="footer-login-link"
           >
-            Landing Page
+            Dashboard
           </button>
         </div>
       </div>

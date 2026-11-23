@@ -15,6 +15,7 @@ export const apiLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test' || process.env.DISABLE_RATE_LIMIT === 'true',
   message: {
     success: false,
     message: 'Too many requests from this IP. Please try again after 15 minutes.'
@@ -27,6 +28,7 @@ export const authLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test' || process.env.DISABLE_RATE_LIMIT === 'true',
   message: {
     success: false,
     message: 'Too many authentication attempts. Please try again after 15 minutes.'
