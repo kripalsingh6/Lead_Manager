@@ -66,11 +66,9 @@ export const connectDB = async (maxRetries = 5, delayMs = 3000) => {
       await sequelize.authenticate();
       console.log('✓ PostgreSQL connected successfully');
 
-      // In development, sync models cleanly without alter: true (avoids ENUM collision)
-      if (config.nodeEnv !== 'production') {
-        await sequelize.sync();
-        console.log('✓ Database models synchronised');
-      }
+      // Synchronize database tables (creates users and leads tables if not exist)
+      await sequelize.sync();
+      console.log('✓ Database models synchronised');
       return;
     } catch (error) {
       console.error(`✗ Connection attempt ${attempt}/${maxRetries} failed: ${error.message}`);

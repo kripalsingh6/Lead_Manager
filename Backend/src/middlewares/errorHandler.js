@@ -56,9 +56,11 @@ export const errorHandler = (err, _req, res, _next) => {
     ...(errors.length > 0 && { errors })
   };
 
+  // Always log error details to server console for Render logs observability
+  console.error('ERROR →', err);
+
   if (config.nodeEnv === 'development') {
     response.stack = err.stack;
-    console.error('ERROR →', err);
   }
 
   res.status(statusCode).json(response);
