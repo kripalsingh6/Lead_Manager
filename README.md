@@ -8,6 +8,7 @@ Built for the **Full Stack Developer Screening Assignment (Meru Technosoft Pvt. 
 
 ## Tech Stack Overview
 
+- **Frontend**: React (Vite), Lucide Icons, Custom Design matching the **LEAD** brand UI design
 - **Backend**: Node.js, Express 5, Sequelize ORM (PostgreSQL)
 - **Database**: PostgreSQL (Structured relational schema, UUID primary keys, connection pooling, ACID transaction guarantees, compound indexes)
 - **Authentication**: JWT (JSON Web Tokens), bcryptjs password hashing, and **Google OAuth 2.0** (`google-auth-library`)
@@ -17,37 +18,43 @@ Built for the **Full Stack Developer Screening Assignment (Meru Technosoft Pvt. 
   - `cors`: Restricted cross-origin requests
   - `express-rate-limit`: Tiered IP rate limiting (strict on auth, balanced on general API)
   - `joi`: Declarative request validation with `stripUnknown` to prevent mass-assignment vulnerabilities
-- **Frontend** *(Upcoming)*: React / Next.js
-
----
-
-## Project Structure
-
 ```
 Lead_Manager/
-├── Backend/
+├── Backend/                          # Express + PostgreSQL Backend
 │   ├── src/
-│   │   ├── config/
-│   │   │   ├── database.js          # PostgreSQL connection & pool config (Sequelize)
-│   │   │   └── environment.js       # Centralized environment variables
-│   │   ├── controllers/
-│   │   │   ├── authController.js     # User registration, login, profile (/me)
-│   │   │   ├── healthController.js   # API & database health probe
-│   │   │   └── leadController.js     # Full lead CRUD, search, filter & stats
-│   │   ├── middlewares/
-│   │   │   ├── auth.js               # JWT verification & user injection
-│   │   │   ├── errorHandler.js       # Centralized error handler with Sequelize mapping
-│   │   │   ├── notFoundHandler.js    # Standardized 404 JSON response
-│   │   │   ├── rateLimiter.js        # Tiered API rate limiting
-│   │   │   └── validate.js           # Generic Joi request validation middleware
-│   │   ├── models/
-│   │   │   ├── index.js              # Model associations & cascade rules
-│   │   │   ├── Lead.js               # Lead schema with compound indexes & ENUMs
-│   │   │   └── User.js               # User schema with bcrypt hooks & scoped passwords
-│   │   ├── routes/
-│   │   │   ├── index.js              # Central API router aggregator (/api)
-│   │   │   ├── authRoutes.js         # Authentication endpoints
-│   │   │   ├── healthRoutes.js       # Health monitoring endpoints
+│   │   ├── config/                   # Database & Environment configuration
+│   │   ├── controllers/              # Auth, Lead CRUD & Dashboard Stats
+│   │   ├── middlewares/              # 7-Layer Defense-in-Depth Middleware
+│   │   ├── models/                   # PostgreSQL Models (User, Lead)
+│   │   ├── routes/                   # API Routes (/api/auth, /api/leads, /api/health)
+│   │   ├── utils/                    # Error handling, JWT, PII Masker & Sanitizer
+│   │   ├── validators/               # Joi Validation Schemas (Strict Mode)
+│   │   ├── app.js                    # Express App Setup
+│   │   └── server.js                 # Entry Point & Connection Pool
+│   ├── .env.example
+│   └── package.json
+├── Frontend/                         # React + Vite Frontend (Brand: LEAD)
+│   ├── src/
+│   │   ├── api/client.js             # API Client with Auth Token & Cookie support
+│   │   ├── components/               # UI Components
+│   │   │   ├── Sidebar.jsx           # Dark Sidebar with LEAD logo & Nav
+│   │   │   ├── Topbar.jsx            # Breadcrumbs, Sample data & Profile
+│   │   │   ├── MetricCards.jsx       # 4 Status Metric Cards
+│   │   │   ├── AnalyticsSection.jsx  # Pipeline Snapshot & Lead Sources
+│   │   │   ├── LeadsTable.jsx        # Table with Search, Filter & Pagination
+│   │   │   ├── AddLeadModal.jsx      # Modal 1: Add Lead with Validation
+│   │   │   ├── EditLeadModal.jsx     # Modal 2: Edit Lead with Status Update
+│   │   │   ├── DeleteLeadModal.jsx   # Modal 3: Confirmation Dialog
+│   │   │   └── AuthModal.jsx         # Sign In / Sign Up / Google OAuth Modal
+│   │   ├── App.jsx                   # Main State & API Integration
+│   │   ├── App.css                   # Pixel-perfect styling matching mockups
+│   │   └── index.css                 # Global resets & typography
+│   ├── index.html
+│   ├── vite.config.js                # Vite dev server + /api proxy to Backend
+│   └── package.json
+├── .gitignore                        # Root Gitignore
+└── README.md                         # Project documentation
+```
 │   │   │   └── leadRoutes.js         # Lead management endpoints
 │   │   ├── utils/
 │   │   │   ├── ApiError.js           # Custom operational error class
