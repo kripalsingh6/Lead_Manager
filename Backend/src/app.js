@@ -4,15 +4,16 @@
 // Assembles the middleware stack in the correct
 // order:
 //
-//  1. Security headers (helmet)
-//  2. HTTP parameter pollution protection (hpp)
-//  3. CORS
-//  4. Body parsing (with 10 KB limit)
-//  5. Response compression
-//  6. Request logging
-//  7. Rate limiting
-//  8. Routes
-//  9. 404 & error handlers
+//  1. Reverse proxy trust (for accurate rate-limiting)
+//  2. Security headers (helmet)
+//  3. HTTP parameter pollution protection (hpp)
+//  4. CORS (flexible for local development)
+//  5. Body parsing (with 10 KB limit)
+//  6. Response compression
+//  7. Request logging
+//  8. Rate limiting
+//  9. Routes
+//  10. 404 & error handlers
 // ─────────────────────────────────────────────
 import express from 'express';
 import cors from 'cors';
@@ -28,31 +29,48 @@ import { errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
 
-// ── 1. Security headers ──────────────────────
+// ── 1. Trust Reverse Proxy (Render, Railway, Heroku, Nginx) ─
+app.set('trust proxy', 1);
+
+// ── 2. Security headers ──────────────────────
 app.use(helmet());
 
-// ── 2. Prevent HTTP parameter pollution ──────
+// ── 3. Prevent HTTP parameter pollution ──────
 app.use(hpp());
 
-// ── 3. CORS ──────────────────────────────────
+// ── 4. CORS ──────────────────────────────────
+const allowedOrigins = [
+  config.clientUrl,
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173'
+].filter(Boolean);
+
 app.use(cors({
-  origin: config.clientUrl,
+  origin: (origin, callback) => {
+    // Allow non-browser tools (e.g. Postman, curl) or matched dev origins
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked request from origin: ${origin}`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// ── 4. Body parsing (limit protects against payload bombs) ──
+// ── 5. Body parsing (limit protects against payload bombs) ──
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
-// ── 5. Compress responses ────────────────────
+// ── 6. Compress responses ────────────────────
 app.use(compression());
 
-// ── 6. Logging ───────────────────────────────
+// ── 7. Logging ───────────────────────────────
 app.use(morgan(config.nodeEnv === 'development' ? 'dev' : 'combined'));
 
-// ── 7. Rate limiting on /api ─────────────────
+// ── 8. Rate limiting on /api ─────────────────
 app.use('/api', apiLimiter);
 
 // ── Root endpoint ────────────────────────────
@@ -60,18 +78,18 @@ app.get('/', (_req, res) => {
   res.json({
     message: 'Welcome to the Lead Manager API',
     version: '1.0.0',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-      leads: '/api/leads'
+    documentation: {
+      health: 'GET /api/health',
+      auth: 'POST /api/auth/register, POST /api/auth/login, GET /api/auth/me',
+      leads: 'GET, POST /api/leads | GET, PUT, DELETE /api/leads/:id | GET /api/leads/dashboard/stats (requires Bearer token)'
     }
   });
 });
 
-// ── 8. API routes ────────────────────────────
+// ── 9. API routes ────────────────────────────
 app.use('/api', routes);
 
-// ── 9. Error handling ────────────────────────
+// ── 10. Error handling ───────────────────────
 app.use(notFoundHandler);
 app.use(errorHandler);
 

@@ -27,6 +27,15 @@ const SORT_MAP = {
 };
 
 /**
+ * Escapes PostgreSQL LIKE/ILIKE special wildcard characters
+ * @param {string} str
+ * @returns {string}
+ */
+const escapeLikeString = (str) => {
+  return str.replace(/[%_\\]/g, '\\$&');
+};
+
+/**
  * @desc    List leads with pagination, search, filter, sort
  * @route   GET /api/leads
  * @access  Private
@@ -41,11 +50,12 @@ export const getAllLeads = asyncHandler(async (req, res) => {
   if (source) where.source = source;
 
   if (search) {
-    // PostgreSQL ILIKE — case-insensitive pattern match
+    const safeSearch = escapeLikeString(search);
+    // PostgreSQL ILIKE — case-insensitive pattern match with escaped wildcards
     where[Op.or] = [
-      { name: { [Op.iLike]: `%${search}%` } },
-      { email: { [Op.iLike]: `%${search}%` } },
-      { company: { [Op.iLike]: `%${search}%` } }
+      { name: { [Op.iLike]: `%${safeSearch}%` } },
+      { email: { [Op.iLike]: `%${safeSearch}%` } },
+      { company: { [Op.iLike]: `%${safeSearch}%` } }
     ];
   }
 
@@ -63,7 +73,7 @@ export const getAllLeads = asyncHandler(async (req, res) => {
     Lead.count({ where })
   ]);
 
-  const totalPages = Math.ceil(totalItems / limit);
+  const totalPages = Math.ceil(totalItems / limit) || 1;
 
   res.status(200).json({
     success: true,

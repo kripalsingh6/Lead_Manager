@@ -8,11 +8,9 @@
 //  • Our own ApiError instances
 //  • Sequelize validation / unique-constraint /
 //    foreign-key / general DB errors
+//  • PostgreSQL syntax/UUID format error (22P02)
 //  • JWT errors (caught in auth middleware)
 //  • Unknown / programming errors (500)
-//
-// In development the stack trace is included;
-// in production only the message is sent.
 // ─────────────────────────────────────────────
 import { config } from '../config/environment.js';
 
@@ -41,8 +39,14 @@ export const errorHandler = (err, _req, res, _next) => {
   }
 
   if (err.name === 'SequelizeDatabaseError') {
-    statusCode = 500;
-    message = 'A database error occurred';
+    // Check for PostgreSQL 22P02: invalid input syntax for type uuid / int
+    if (err.original && err.original.code === '22P02') {
+      statusCode = 400;
+      message = 'Invalid input format for identifier';
+    } else {
+      statusCode = 500;
+      message = 'A database error occurred';
+    }
   }
 
   // ── Build response ──────────────────────────

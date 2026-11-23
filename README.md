@@ -172,3 +172,4 @@ The server will start at `http://localhost:5000`.
 ## Highlights & Tricky Aspects
 - **Security Defense-in-Depth**: Combining layered express middleware (`helmet`, `hpp`, `cors`, `rate-limit`, `joi`) with database-level ENUM constraints and parameterised queries prevents SQL injection, mass assignment, and DDoS attempts.
 - **Graceful Lifecycle Management**: Implemented connection pool draining and server shutdown handling to prevent corrupted database transactions during restarts or deployments.
+

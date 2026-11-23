@@ -19,7 +19,8 @@ import validate from '../middlewares/validate.js';
 import {
   createLeadSchema,
   updateLeadSchema,
-  queryLeadsSchema
+  queryLeadsSchema,
+  idParamSchema
 } from '../validators/leadValidator.js';
 
 const router = express.Router();
@@ -36,6 +37,7 @@ router.route('/')
   .post(validate(createLeadSchema), createLead);
 
 router.route('/:id')
+  .all(validate(idParamSchema, 'params'))
   .get(getLeadById)
   .put(validate(updateLeadSchema), updateLead)
   .delete(deleteLead);

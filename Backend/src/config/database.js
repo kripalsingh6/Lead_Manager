@@ -3,7 +3,8 @@
 //
 // • Connection pooling prevents exhausting DB
 //   connections under high concurrency.
-// • Retry logic handles transient startup delays.
+// • Automatic retry logic with backoff handles
+//   transient startup and container delays.
 // • `underscored: true` maps JS camelCase to
 //   PostgreSQL snake_case automatically.
 // ─────────────────────────────────────────────
@@ -31,34 +32,43 @@ const sequelize = new Sequelize(
       underscored: true   // snake_case columns in PostgreSQL
     },
 
-    // Recommended Postgres-specific tweaks
     dialectOptions: {
-      // Use UTC for all timestamps
       useUTC: true
     }
   }
 );
 
 /**
- * Authenticate and optionally sync models.
- * Called once at server startup.
+ * Authenticate and synchronize models with retry mechanism.
+ * @param {number} maxRetries Number of connection attempts before failing
+ * @param {number} delayMs Delay between attempts in milliseconds
  */
-export const connectDB = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log('✓ PostgreSQL connected successfully');
+export const connectDB = async (maxRetries = 5, delayMs = 3000) => {
+  let attempt = 0;
 
-    // In development, sync models automatically.
-    // In production, use Sequelize CLI migrations instead.
-    if (config.nodeEnv !== 'production') {
-      await sequelize.sync({ alter: true });
-      console.log('✓ Database models synchronised');
+  while (attempt < maxRetries) {
+    try {
+      attempt++;
+      await sequelize.authenticate();
+      console.log('✓ PostgreSQL connected successfully');
+
+      // In development, sync models cleanly without alter: true (avoids ENUM collision)
+      if (config.nodeEnv !== 'production') {
+        await sequelize.sync();
+        console.log('✓ Database models synchronised');
+      }
+      return;
+    } catch (error) {
+      console.error(`✗ Connection attempt ${attempt}/${maxRetries} failed: ${error.message}`);
+      if (attempt < maxRetries) {
+        console.log(`⏳ Retrying in ${delayMs / 1000} seconds...`);
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      } else {
+        console.error('✗ Max database connection retries reached. Exiting.');
+        process.exit(1);
+      }
     }
-  } catch (error) {
-    console.error('✗ Database connection failed:', error.message);
-    process.exit(1);
   }
 };
 
 export default sequelize;
-

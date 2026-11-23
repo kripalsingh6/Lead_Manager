@@ -1,13 +1,21 @@
 // ─────────────────────────────────────────────
 // Lead Validators  (Joi schemas)
 //
-// Three schemas:
+// Schemas:
 //  • createLeadSchema — POST (name + email required)
 //  • updateLeadSchema — PUT  (at least one field)
 //  • queryLeadsSchema — GET  (pagination, search, filter, sort)
+//  • idParamSchema    — :id  (validates UUID format)
 // ─────────────────────────────────────────────
 import Joi from 'joi';
 import { LEAD_STATUSES, LEAD_SOURCES } from '../models/Lead.js';
+
+export const idParamSchema = Joi.object({
+  id: Joi.string().uuid().required().messages({
+    'string.guid': 'Invalid lead ID format: must be a valid UUID',
+    'any.required': 'Lead ID is required'
+  })
+});
 
 export const createLeadSchema = Joi.object({
   name: Joi.string().trim().min(1).max(150).required().messages({
@@ -58,4 +66,3 @@ export const queryLeadsSchema = Joi.object({
     .default('createdAt'),
   order: Joi.string().valid('ASC', 'DESC', 'asc', 'desc').default('DESC')
 });
-
