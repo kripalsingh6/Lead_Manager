@@ -10,7 +10,7 @@ Built for the **Full Stack Developer Screening Assignment (Meru Technosoft Pvt. 
 
 - **Backend**: Node.js, Express 5, Sequelize ORM (PostgreSQL)
 - **Database**: PostgreSQL (Structured relational schema, UUID primary keys, connection pooling, ACID transaction guarantees, compound indexes)
-- **Authentication**: JWT (JSON Web Tokens) & bcryptjs password hashing (12 salt rounds)
+- **Authentication**: JWT (JSON Web Tokens), bcryptjs password hashing, and **Google OAuth 2.0** (`google-auth-library`)
 - **Security & Protection**:
   - `helmet`: Secure HTTP response headers
   - `hpp`: HTTP parameter pollution protection
@@ -147,9 +147,12 @@ The server will start at `http://localhost:5000`.
 - `GET /api/health`: Health status & PostgreSQL connection probe.
 
 ### Authentication
-- `POST /api/auth/register`: Create a new user account.
-- `POST /api/auth/login`: Authenticate and receive a JWT token.
+- `POST /api/auth/register`: Create a new user account with email/password.
+- `POST /api/auth/login`: Authenticate with email/password and receive a JWT token.
 - `GET /api/auth/me`: Fetch authenticated user profile (Requires `Bearer <token>`).
+- `POST /api/auth/google`: Authenticate with Google ID Token or Authorization Code (SPA / Google Sign-In button).
+- `GET /api/auth/google`: Generate Google OAuth 2.0 authorization URL for redirect-based login.
+- `GET /api/auth/google/callback`: Google OAuth 2.0 redirect callback endpoint.
 
 ### Leads (Requires `Authorization: Bearer <token>`)
 - `GET /api/leads`: Retrieve paginated leads.

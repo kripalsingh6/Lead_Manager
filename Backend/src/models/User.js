@@ -1,20 +1,19 @@
 // ─────────────────────────────────────────────
 // User Model  (PostgreSQL / Sequelize)
 //
-// Security:
-//  • Passwords hashed with bcrypt (12 salt rounds)
-//    via beforeCreate / beforeUpdate hooks.
-//  • Default scope EXCLUDES the password column
-//    so it never leaks into API responses.
-//  • `withPassword` scope used only during login.
+// Security & Authentication:
+//  • Local auth: Passwords hashed with bcrypt (12 salt rounds)
+//  • Google OAuth: Stores googleId, avatar, authProvider
+//  • Default scope EXCLUDES password
 // ─────────────────────────────────────────────
 import { DataTypes, Model } from 'sequelize';
 import bcrypt from 'bcryptjs';
 import sequelize from '../config/database.js';
 
 class User extends Model {
-  /** Compare a plain-text candidate against the hash. */
+  /** Compare a plain-text candidate against the hash (local auth). */
   async comparePassword(candidatePassword) {
+    if (!this.password) return false;
     return bcrypt.compare(candidatePassword, this.password);
   }
 
@@ -48,12 +47,32 @@ User.init(
       },
       // Always store lowercase, trimmed
       set(value) {
-        this.setDataValue('email', value.toLowerCase().trim());
+        if (value) {
+          this.setDataValue('email', value.toLowerCase().trim());
+        }
       }
     },
     password: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: true // Nullable for OAuth users
+    },
+    googleId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      unique: true,
+      field: 'google_id'
+    },
+    avatar: {
+      type: DataTypes.STRING(500),
+      allowNull: true
+    },
+    authProvider: {
+      type: DataTypes.STRING(20),
+      defaultValue: 'local',
+      field: 'auth_provider',
+      validate: {
+        isIn: [['local', 'google']]
+      }
     }
   },
   {
@@ -61,14 +80,16 @@ User.init(
     modelName: 'User',
     tableName: 'users',
 
-    // ── Hooks: auto-hash passwords ────────────
+    // ── Hooks: auto-hash passwords if provided ─
     hooks: {
       beforeCreate: async (user) => {
-        const salt = await bcrypt.genSalt(12);
-        user.password = await bcrypt.hash(user.password, salt);
+        if (user.password) {
+          const salt = await bcrypt.genSalt(12);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
       },
       beforeUpdate: async (user) => {
-        if (user.changed('password')) {
+        if (user.changed('password') && user.password) {
           const salt = await bcrypt.genSalt(12);
           user.password = await bcrypt.hash(user.password, salt);
         }
@@ -86,4 +107,3 @@ User.init(
 );
 
 export default User;
-

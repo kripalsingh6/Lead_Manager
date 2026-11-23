@@ -2,8 +2,7 @@
 // Auth Validators  (Joi schemas)
 //
 // Declarative validation with human-readable
-// error messages.  The `validate` middleware
-// runs the schema and rejects early on failure.
+// error messages.
 // ─────────────────────────────────────────────
 import Joi from 'joi';
 
@@ -35,3 +34,9 @@ export const loginSchema = Joi.object({
   })
 });
 
+export const googleAuthSchema = Joi.object({
+  idToken: Joi.string().optional(),
+  code: Joi.string().optional()
+}).or('idToken', 'code').messages({
+  'object.missing': 'Either idToken or authorization code is required'
+});
