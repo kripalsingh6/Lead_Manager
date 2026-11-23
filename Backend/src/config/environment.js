@@ -29,10 +29,11 @@ export const config = {
     }
   },
 
-  // ── JWT ─────────────────────────────────────
+  // ── JWT (Short-lived Access Token - Layer 4) 
   jwt: {
     secret: process.env.JWT_SECRET || 'change-me-in-production',
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    cookieMaxAgeMs: parseInt(process.env.JWT_COOKIE_MAX_AGE_MS, 10) || 15 * 60 * 1000 // 15 minutes default
   },
 
   // ── Google OAuth ────────────────────────────

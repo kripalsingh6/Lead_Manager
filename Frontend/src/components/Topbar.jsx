@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
-import { Bell, ChevronDown, User, LogOut, LogIn } from 'lucide-react';
+import { Bell, ChevronDown, User, LogOut, LogIn, Globe } from 'lucide-react';
+import { getEffectiveDisplayName } from '../api/client';
 
-export const Topbar = ({ user, onOpenAuth, onLogout, onSeedSampleData, isSeeding }) => {
+export const Topbar = ({
+  user,
+  onOpenAuth,
+  onLogout,
+  onSeedSampleData,
+  isSeeding,
+  onNavigateToLanding
+}) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const displayName = getEffectiveDisplayName(user);
 
   return (
     <header className="topbar">
@@ -39,22 +48,34 @@ export const Topbar = ({ user, onOpenAuth, onLogout, onSeedSampleData, isSeeding
           >
             <div className="avatar">
               {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} />
+                <img src={user.avatar} alt={displayName} />
               ) : (
-                <span>{user?.name ? user.name.charAt(0).toUpperCase() : 'A'}</span>
+                <span>{displayName ? displayName.charAt(0).toUpperCase() : 'U'}</span>
               )}
             </div>
-            <span className="user-name">{user?.name || 'Alex Morgan'}</span>
+            <span className="user-name">{displayName}</span>
             <ChevronDown size={14} className="text-muted" />
           </button>
 
           {showDropdown && (
             <div className="dropdown-menu">
               <div className="dropdown-header">
-                <span className="dropdown-user-name">{user?.name || 'Guest User'}</span>
+                <span className="dropdown-user-name">{displayName}</span>
                 <span className="dropdown-user-email">{user?.email || 'Not logged in'}</span>
               </div>
               <div className="dropdown-divider"></div>
+              {onNavigateToLanding && (
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    onNavigateToLanding();
+                  }}
+                >
+                  <Globe size={16} />
+                  <span>Landing Page</span>
+                </button>
+              )}
               {user ? (
                 <button
                   className="dropdown-item text-danger"

@@ -113,15 +113,9 @@ export const LeadsTable = ({
               </tr>
             ) : leads.length === 0 ? (
               <tr>
-                <td colSpan="7" className="text-center py-12">
+                <td colSpan="7" className="text-center py-8">
                   <div className="empty-state">
-                    <p className="empty-title">No leads found</p>
-                    <p className="empty-sub">
-                      {search || statusFilter
-                        ? 'Try adjusting your search or filters'
-                        : 'Get started by creating your first lead'}
-                    </p>
-                    <button className="btn-primary mt-3" onClick={onOpenAddModal}>
+                    <button className="btn-primary" onClick={onOpenAddModal}>
                       + Add lead
                     </button>
                   </div>

@@ -9,7 +9,8 @@ import {
   getMe,
   googleAuth,
   getGoogleAuthUrl,
-  googleAuthCallback
+  googleAuthCallback,
+  updateProfile
 } from '../controllers/authController.js';
 import protect from '../middlewares/auth.js';
 import validate from '../middlewares/validate.js';
@@ -27,6 +28,7 @@ router.post('/register', authLimiter, validate(registerSchema), register);
 router.post('/login',    authLimiter, validate(loginSchema),    login);
 router.post('/logout',   logout);
 router.get('/me',        protect,                               getMe);
+router.put('/profile',   protect,                               updateProfile);
 
 // ── Google OAuth 2.0 ───────────────────────────
 router.post('/google',   authLimiter, validate(googleAuthSchema), googleAuth);

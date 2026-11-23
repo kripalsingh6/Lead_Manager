@@ -1,16 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Lock, Mail, User, AlertCircle } from 'lucide-react';
 import { apiRequest, setStoredToken, setStoredUser } from '../api/client';
 
-export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
-  const [isLogin, setIsLogin] = useState(true);
+export const AuthModal = ({
+  isOpen,
+  onClose,
+  onAuthSuccess,
+  initialEmail = '',
+  defaultIsLogin = true
+}) => {
+  const [isLogin, setIsLogin] = useState(defaultIsLogin);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    email: initialEmail || '',
     password: ''
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const GOOGLE_CLIENT_ID =
+    import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+    '61538607867-ushk55llj8l2rjucurf2m2m9qlil6mjl.apps.googleusercontent.com';
+
+  const handleGoogleCredentialResponse = async (response) => {
+    if (!response || !response.credential) return;
+    setIsLoading(true);
+    setError('');
+    try {
+      const res = await apiRequest('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ idToken: response.credential })
+      });
+      if (res.data?.token && res.data?.user) {
+        setStoredToken(res.data.token);
+        setStoredUser(res.data.user);
+        onAuthSuccess(res.data.user, false);
+        onClose();
+      }
+    } catch (err) {
+      setError('Google Sign-In verification failed: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsLogin(defaultIsLogin);
+      if (initialEmail) {
+        setFormData((prev) => ({ ...prev, email: initialEmail }));
+      }
+      setError('');
+
+      if (window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false
+          });
+        } catch (e) {
+          console.warn('GIS init error:', e);
+        }
+      }
+    }
+  }, [isOpen, initialEmail, defaultIsLogin]);
 
   if (!isOpen) return null;
 
@@ -21,9 +75,14 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
 
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
+      const cleanEmail = formData.email.trim();
       const payload = isLogin
-        ? { email: formData.email, password: formData.password }
-        : { name: formData.name, email: formData.email, password: formData.password };
+        ? { email: cleanEmail, password: formData.password }
+        : {
+            name: formData.name ? formData.name.trim() : undefined,
+            email: cleanEmail,
+            password: formData.password
+          };
 
       const res = await apiRequest(endpoint, {
         method: 'POST',
@@ -33,7 +92,7 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
       if (res.data?.token && res.data?.user) {
         setStoredToken(res.data.token);
         setStoredUser(res.data.user);
-        onAuthSuccess(res.data.user);
+        onAuthSuccess(res.data.user, !isLogin);
         onClose();
       }
     } catch (err) {
@@ -43,14 +102,67 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
+    setIsLoading(true);
+    setError('');
+
     try {
-      const res = await apiRequest('/auth/google', { method: 'GET' });
-      if (res.data?.url) {
-        window.location.href = res.data.url;
+      if (window.google?.accounts?.oauth2) {
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'email profile openid',
+          callback: async (tokenResponse) => {
+            if (tokenResponse.error) {
+              setError(`Google Sign-In failed: ${tokenResponse.error_description || tokenResponse.error}`);
+              setIsLoading(false);
+              return;
+            }
+            if (tokenResponse.access_token) {
+              try {
+                const res = await apiRequest('/auth/google', {
+                  method: 'POST',
+                  body: JSON.stringify({ accessToken: tokenResponse.access_token })
+                });
+                if (res.data?.token && res.data?.user) {
+                  setStoredToken(res.data.token);
+                  setStoredUser(res.data.user);
+                  onAuthSuccess(res.data.user, false);
+                  onClose();
+                }
+              } catch (err) {
+                setError('Google verification failed: ' + (err.message || 'Unknown error'));
+              } finally {
+                setIsLoading(false);
+              }
+            } else {
+              setIsLoading(false);
+            }
+          }
+        });
+        client.requestAccessToken();
+        return;
       }
-    } catch (err) {
-      setError('Google Sign-In initialization failed: ' + err.message);
+
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCredentialResponse,
+          auto_select: false
+        });
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            window.location.href = 'http://localhost:5000/api/auth/google';
+          }
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      window.location.href = 'http://localhost:5000/api/auth/google';
+    } catch (e) {
+      console.error('Google auth error:', e);
+      setError('Unable to initiate Google Sign-In. Please try again.');
+      setIsLoading(false);
     }
   };
 
@@ -74,20 +186,39 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
         {error && (
           <div className="modal-alert-banner">
             <AlertCircle size={16} className="alert-icon" />
-            <span>{error}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span>{error}</span>
+              {error.includes('already exists') && (
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 'none', color: '#5846f6', textDecoration: 'underline', padding: 0, textAlign: 'left', cursor: 'pointer', fontSize: 12 }}
+                  onClick={() => { setIsLogin(true); setError(''); }}
+                >
+                  Click here to Sign In with this email
+                </button>
+              )}
+              {error.includes('Invalid email or password') && (
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 'none', color: '#5846f6', textDecoration: 'underline', padding: 0, textAlign: 'left', cursor: 'pointer', fontSize: 12 }}
+                  onClick={() => { setIsLogin(false); setError(''); }}
+                >
+                  New here? Click here to Create an Account
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="modal-form">
           {!isLogin && (
             <div className="form-group">
-              <label className="form-label">Full Name</label>
+              <label className="form-label">Full Name (Optional)</label>
               <div className="input-with-icon">
                 <User size={16} className="input-icon" />
                 <input
                   type="text"
-                  placeholder="Alex Morgan"
-                  required
+                  placeholder="e.g. Kripal Singh"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="form-input"
@@ -102,7 +233,7 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
               <Mail size={16} className="input-icon" />
               <input
                 type="email"
-                placeholder="alex@company.com"
+                placeholder="you@company.com"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -134,11 +265,12 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
             <span>or</span>
           </div>
 
-          {/* Google Sign In Button */}
+          {/* Single Google OAuth Button */}
           <button
             type="button"
             className="btn-google-auth"
             onClick={handleGoogleLogin}
+            disabled={isLoading}
           >
             <svg className="google-icon" viewBox="0 0 24 24">
               <path

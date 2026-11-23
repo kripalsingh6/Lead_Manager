@@ -24,14 +24,31 @@ const getOAuth2Client = () => {
 };
 
 /**
- * Cookie options for HttpOnly session defense
+ * Cookie options for HttpOnly session defense:
+ * Pure session cookie (no maxAge/expires) so the cookie is destroyed
+ * automatically when the browser or tab is closed.
  */
 const getCookieOptions = () => ({
   httpOnly: true,
   secure: config.nodeEnv === 'production',
-  sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax'
 });
+
+/**
+ * Format a human-readable name from an email prefix
+ * e.g. "kripal@gmail.com" -> "Kripal"
+ */
+const formatNameFromEmail = (email) => {
+  if (!email) return 'User';
+  const prefix = email.split('@')[0];
+  const cleaned = prefix.replace(/[._-]+/g, ' ').replace(/\d+/g, '').trim();
+  if (!cleaned) return prefix;
+  return cleaned
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+};
 
 /**
  * Sends token via HttpOnly cookie AND JSON payload for dual defense
@@ -58,12 +75,22 @@ const sendAuthResponse = (res, statusCode, message, user) => {
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
-  const existing = await User.findOne({ where: { email } });
+  const existing = await User.findOne({ where: { email: email.toLowerCase().trim() } });
   if (existing) {
     throw ApiError.conflict('An account with this email already exists');
   }
 
-  const user = await User.scope('withPassword').create({ name, email, password });
+  const isDemo = email.toLowerCase().trim() === 'alex@leadmanager.io' || email.toLowerCase().trim() === 'demo@leadmanager.io';
+  const finalName = name && name.trim() && (isDemo || name.trim() !== 'Alex Morgan')
+    ? name.trim()
+    : (isDemo ? 'Alex Morgan' : formatNameFromEmail(email));
+
+  const user = await User.scope('withPassword').create({
+    name: finalName,
+    email: email.toLowerCase().trim(),
+    password,
+    onboardingCompleted: false
+  });
   sendAuthResponse(res, 201, 'Account created successfully', user);
 });
 
@@ -75,7 +102,7 @@ export const register = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.scope('withPassword').findOne({ where: { email } });
+  const user = await User.scope('withPassword').findOne({ where: { email: email.toLowerCase().trim() } });
   if (!user) {
     throw ApiError.unauthorized('Invalid email or password');
   }
@@ -87,6 +114,13 @@ export const login = asyncHandler(async (req, res) => {
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
     throw ApiError.unauthorized('Invalid email or password');
+  }
+
+  // If this is another email whose name was previously stored as "Alex Morgan" or "User", fix it
+  const isDemo = user.email === 'alex@leadmanager.io' || user.email === 'demo@leadmanager.io';
+  if (!isDemo && (user.name === 'Alex Morgan' || user.name === 'User' || !user.name)) {
+    user.name = formatNameFromEmail(user.email);
+    await user.save();
   }
 
   sendAuthResponse(res, 200, 'Login successful', user);
@@ -128,7 +162,7 @@ export const getMe = asyncHandler(async (req, res) => {
  * @access  Public
  */
 export const googleAuth = asyncHandler(async (req, res) => {
-  const { idToken, code } = req.body;
+  const { idToken, accessToken, code } = req.body;
 
   if (!config.google.clientId) {
     throw ApiError.internal('Google OAuth is not configured on the server. Please set GOOGLE_CLIENT_ID in .env.');
@@ -141,7 +175,23 @@ export const googleAuth = asyncHandler(async (req, res) => {
 
   const oAuth2Client = getOAuth2Client();
 
-  if (idToken) {
+  if (accessToken) {
+    try {
+      const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if (!userInfoRes.ok) {
+        throw new Error(`Google API returned status ${userInfoRes.status}`);
+      }
+      const profile = await userInfoRes.json();
+      googleId = profile.sub;
+      email = profile.email;
+      name = profile.name;
+      picture = profile.picture;
+    } catch (err) {
+      throw ApiError.unauthorized(`Invalid Google Access Token: ${err.message}`);
+    }
+  } else if (idToken) {
     try {
       const ticket = await oAuth2Client.verifyIdToken({
         idToken,
@@ -186,19 +236,30 @@ export const googleAuth = asyncHandler(async (req, res) => {
   });
 
   if (user) {
+    let changed = false;
+    // Always sync the user's latest name and avatar from Google
+    if (name && user.name !== name) {
+      user.name = name;
+      changed = true;
+    }
+    if (picture && user.avatar !== picture) {
+      user.avatar = picture;
+      changed = true;
+    }
     if (!user.googleId) {
       user.googleId = googleId;
-      if (picture && !user.avatar) user.avatar = picture;
-      await user.save();
+      changed = true;
     }
+    if (changed) await user.save();
   } else {
     user = await User.create({
-      name: name || email.split('@')[0],
+      name: name || formatNameFromEmail(email),
       email: email.toLowerCase().trim(),
       googleId,
       avatar: picture || null,
       authProvider: 'google',
-      password: null
+      password: null,
+      onboardingCompleted: true
     });
   }
 
@@ -240,11 +301,11 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
   const { code, error } = req.query;
 
   if (error) {
-    return res.redirect(`${config.clientUrl}/login?error=${encodeURIComponent(error)}`);
+    return res.redirect(`${config.clientUrl}/?error=${encodeURIComponent(error)}`);
   }
 
   if (!code) {
-    return res.redirect(`${config.clientUrl}/login?error=MissingAuthorizationCode`);
+    return res.redirect(`${config.clientUrl}/?error=MissingAuthorizationCode`);
   }
 
   try {
@@ -267,27 +328,60 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
     });
 
     if (user) {
+      let changed = false;
+      if (name && user.name !== name) {
+        user.name = name;
+        changed = true;
+      }
+      if (picture && user.avatar !== picture) {
+        user.avatar = picture;
+        changed = true;
+      }
       if (!user.googleId) {
         user.googleId = googleId;
-        if (picture && !user.avatar) user.avatar = picture;
-        await user.save();
+        changed = true;
       }
+      if (changed) await user.save();
     } else {
       user = await User.create({
-        name: name || email.split('@')[0],
+        name: name || formatNameFromEmail(email),
         email: email.toLowerCase().trim(),
         googleId,
         avatar: picture || null,
         authProvider: 'google',
-        password: null
+        password: null,
+        onboardingCompleted: true
       });
     }
 
     const token = generateToken(user.id);
     res.cookie('token', token, getCookieOptions());
 
-    return res.redirect(`${config.clientUrl}/auth/callback?token=${token}`);
+    return res.redirect(`${config.clientUrl}/?token=${token}`);
   } catch (err) {
-    return res.redirect(`${config.clientUrl}/login?error=${encodeURIComponent(err.message)}`);
+    return res.redirect(`${config.clientUrl}/?error=${encodeURIComponent(err.message)}`);
   }
+});
+
+/**
+ * @desc    Update user profile & complete onboarding
+ * @route   PUT /api/auth/profile
+ * @access  Private
+ */
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { name, role, domain, onboardingCompleted } = req.body;
+  const user = req.user;
+
+  if (name !== undefined && name.trim()) user.name = name.trim();
+  if (role !== undefined) user.role = role.trim();
+  if (domain !== undefined) user.domain = domain.trim();
+  if (onboardingCompleted !== undefined) user.onboardingCompleted = Boolean(onboardingCompleted);
+
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Profile updated successfully',
+    data: user.toSafeObject()
+  });
 });

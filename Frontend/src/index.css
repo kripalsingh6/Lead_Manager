@@ -3,14 +3,16 @@
 :root {
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --bg-app: #f8fafc;
-  --bg-sidebar: #0f1422;
-  --bg-sidebar-hover: #1c2237;
-  --bg-sidebar-active: #382c6c;
-  --text-sidebar: #94a3b8;
+  --bg-sidebar: #151126;
+  --bg-sidebar-hover: #221b3d;
+  --bg-sidebar-active: #5846f6;
+  --text-sidebar: #9fa6bc;
   --text-sidebar-bright: #ffffff;
   --primary: #5846f6;
-  --primary-hover: #4735e0;
-  --primary-light: #f1f0fb;
+  --primary-hover: #4838cc;
+  --primary-light: #ede9fe;
+  --primary-gradient: linear-gradient(135deg, #5846f6 0%, #7c3aed 100%);
+  --accent-magenta: #c026d3;
   --border-light: #eaecf0;
   --border-input: #e2e8f0;
   --text-dark: #0f172a;
@@ -18,14 +20,14 @@
   --text-light: #94a3b8;
 
   /* Status Colors */
-  --color-new: #7c3aed;
-  --bg-new: #f5f3ff;
-  --color-contacted: #2563eb;
-  --bg-contacted: #eff6ff;
-  --color-qualified: #16a34a;
-  --bg-qualified: #f0fdf4;
-  --color-lost: #dc2626;
-  --bg-lost: #fef2f2;
+  --color-new: #5846f6;
+  --bg-new: #ede9fe;
+  --color-contacted: #0284c7;
+  --bg-contacted: #e0f2fe;
+  --color-qualified: #059669;
+  --bg-qualified: #d1fae5;
+  --color-lost: #e11d48;
+  --bg-lost: #ffe4e6;
 }
 
 * {

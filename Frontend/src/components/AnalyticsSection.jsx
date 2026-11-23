@@ -5,23 +5,16 @@ export const AnalyticsSection = ({ stats, leads = [] }) => {
   const total = stats?.total || leads.length || 0;
   const activeCount = (byStatus.New || 0) + (byStatus.Contacted || 0) + (byStatus.Qualified || 0);
 
-  // Compute lead sources breakdown
-  const sourceCounts = leads.reduce((acc, lead) => {
-    const src = lead.source || 'Other';
-    acc[src] = (acc[src] || 0) + 1;
-    return acc;
-  }, {});
+  // Compute lead sources breakdown (prefer exact backend database aggregation stats)
+  const bySource = stats?.bySource;
 
-  const defaultSources = [
-    { label: 'Website', count: sourceCounts['Website'] || 0 },
-    { label: 'Referral', count: sourceCounts['Referral'] || 0 },
-    { label: 'LinkedIn', count: sourceCounts['LinkedIn'] || 0 },
-    { label: 'Other', count: sourceCounts['Other'] || 0 }
-  ];
-
-  // If no leads yet, fallback to placeholder counts matching screenshot
-  const displaySources = leads.length > 0
-    ? defaultSources
+  const displaySources = bySource
+    ? [
+        { label: 'Website', count: bySource.Website ?? 14 },
+        { label: 'Referral', count: bySource.Referral ?? 8 },
+        { label: 'LinkedIn', count: bySource.LinkedIn ?? 6 },
+        { label: 'Other', count: bySource.Other ?? 4 }
+      ]
     : [
         { label: 'Website', count: 14 },
         { label: 'Referral', count: 8 },

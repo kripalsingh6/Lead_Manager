@@ -73,6 +73,19 @@ User.init(
       validate: {
         isIn: [['local', 'google']]
       }
+    },
+    role: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
+    domain: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
+    onboardingCompleted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      field: 'onboarding_completed'
     }
   },
   {
