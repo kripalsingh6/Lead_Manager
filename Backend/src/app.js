@@ -64,6 +64,7 @@ const configuredOrigins = (config.clientUrl || '')
 
 const allowedOrigins = [
   ...configuredOrigins,
+  'https://lead-manager-decoder4.vercel.app',
   'http://localhost:3000',
   'http://localhost:5173',
   'http://127.0.0.1:3000',
@@ -81,16 +82,17 @@ app.use(
       // Check explicit whitelist or vercel.app preview/production subdomains
       const isAllowed =
         allowedOrigins.includes(origin) ||
-        /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.vercel\.app$/.test(origin);
+        /^https:\/\/[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.vercel\.app$/.test(origin);
 
       if (isAllowed) {
         return callback(null, true);
       }
-      return callback(new Error(`Strict CORS: Origin ${origin} rejected`));
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    optionsSuccessStatus: 200
   })
 );
 
