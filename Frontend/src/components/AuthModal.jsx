@@ -179,3 +179,4 @@ export const AuthModal = ({ isOpen, onClose, onAuthSuccess }) => {
     </div>
   );
 };
+

@@ -63,3 +63,4 @@ export const MetricCards = ({ stats, totalLeads = 0 }) => {
     </div>
   );
 };
+

@@ -58,3 +58,4 @@ export const DeleteLeadModal = ({ isOpen, lead, onClose, onConfirm, isDeleting }
     </div>
   );
 };
+

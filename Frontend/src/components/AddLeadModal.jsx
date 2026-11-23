@@ -186,3 +186,4 @@ export const AddLeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
     </div>
   );
 };
+

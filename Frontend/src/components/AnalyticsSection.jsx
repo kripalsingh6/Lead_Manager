@@ -112,3 +112,4 @@ export const AnalyticsSection = ({ stats, leads = [] }) => {
     </div>
   );
 };
+

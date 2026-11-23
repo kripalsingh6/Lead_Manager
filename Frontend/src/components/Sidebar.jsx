@@ -132,3 +132,4 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0 })
     </aside>
   );
 };
+

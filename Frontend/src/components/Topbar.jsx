@@ -85,3 +85,4 @@ export const Topbar = ({ user, onOpenAuth, onLogout, onSeedSampleData, isSeeding
     </header>
   );
 };
+
