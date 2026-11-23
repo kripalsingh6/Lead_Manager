@@ -1,15 +1,9 @@
 // ─────────────────────────────────────────────
-// Joi Validation Middleware Factory
+// Joi Validation Middleware Factory (Strict Mode)
 //
-// Returns an Express middleware that validates
-// `req[source]` (body, query, or params) against
-// the given Joi schema.
-//
-// • `abortEarly: false` → returns ALL errors
-// • `stripUnknown: true` → drops extra fields
-//   (prevents mass-assignment attacks)
-// • Compatible with Express 5 (defines property
-//   descriptor so getter-only properties don't throw)
+// Implements Layer 5 Payload Defense:
+//  • Strict mass-assignment protection (rejects unknown fields)
+//  • Express 5 getter-safe property definition
 // ─────────────────────────────────────────────
 import ApiError from '../utils/ApiError.js';
 
@@ -19,9 +13,11 @@ import ApiError from '../utils/ApiError.js';
  */
 const validate = (schema, source = 'body') => {
   return (req, _res, next) => {
+    // stripUnknown: false + allowUnknown: false ensures strict schema compliance
     const { error, value } = schema.validate(req[source], {
       abortEarly: false,
-      stripUnknown: true
+      stripUnknown: false,
+      allowUnknown: false
     });
 
     if (error) {
@@ -29,10 +25,10 @@ const validate = (schema, source = 'body') => {
         field: detail.path.join('.'),
         message: detail.message
       }));
-      throw ApiError.badRequest('Validation failed', errors);
+      throw ApiError.badRequest('Validation failed: strict payload verification', errors);
     }
 
-    // Replace with sanitised/coerced values safely in Express 5
+    // Safely replace validated and coerced values in Express 5
     Object.defineProperty(req, source, {
       value,
       writable: true,

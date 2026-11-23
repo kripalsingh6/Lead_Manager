@@ -1,15 +1,8 @@
 // ─────────────────────────────────────────────
 // Auth Controller
 //
-// Local Auth:
-//   POST /api/auth/register — create account
-//   POST /api/auth/login    — authenticate
-//   GET  /api/auth/me       — current user profile
-//
-// Google OAuth:
-//   POST /api/auth/google          — authenticate via idToken or code
-//   GET  /api/auth/google          — generate OAuth authorization URL
-//   GET  /api/auth/google/callback — OAuth redirect callback
+// Implements Layer 4: Sets secure HttpOnly SameSite
+// cookies alongside JSON response.
 // ─────────────────────────────────────────────
 import { Op } from 'sequelize';
 import { OAuth2Client } from 'google-auth-library';
@@ -31,6 +24,33 @@ const getOAuth2Client = () => {
 };
 
 /**
+ * Cookie options for HttpOnly session defense
+ */
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: config.nodeEnv === 'production',
+  sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+});
+
+/**
+ * Sends token via HttpOnly cookie AND JSON payload for dual defense
+ */
+const sendAuthResponse = (res, statusCode, message, user) => {
+  const token = generateToken(user.id);
+  res.cookie('token', token, getCookieOptions());
+
+  res.status(statusCode).json({
+    success: true,
+    message,
+    data: {
+      user: user.toSafeObject(),
+      token
+    }
+  });
+};
+
+/**
  * @desc    Register a new user
  * @route   POST /api/auth/register
  * @access  Public
@@ -38,21 +58,13 @@ const getOAuth2Client = () => {
 export const register = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
-  // Check for existing account
   const existing = await User.findOne({ where: { email } });
   if (existing) {
     throw ApiError.conflict('An account with this email already exists');
   }
 
-  // Create user — password is automatically hashed by model hook
   const user = await User.scope('withPassword').create({ name, email, password });
-  const token = generateToken(user.id);
-
-  res.status(201).json({
-    success: true,
-    message: 'Account created successfully',
-    data: { user: user.toSafeObject(), token }
-  });
+  sendAuthResponse(res, 201, 'Account created successfully', user);
 });
 
 /**
@@ -63,7 +75,6 @@ export const register = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  // Fetch user WITH password (excluded by default scope)
   const user = await User.scope('withPassword').findOne({ where: { email } });
   if (!user) {
     throw ApiError.unauthorized('Invalid email or password');
@@ -78,14 +89,26 @@ export const login = asyncHandler(async (req, res) => {
     throw ApiError.unauthorized('Invalid email or password');
   }
 
-  const token = generateToken(user.id);
+  sendAuthResponse(res, 200, 'Login successful', user);
+});
+
+/**
+ * @desc    Log out user & clear HttpOnly cookie
+ * @route   POST /api/auth/logout
+ * @access  Public
+ */
+export const logout = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: config.nodeEnv === 'production',
+    sameSite: config.nodeEnv === 'production' ? 'strict' : 'lax'
+  });
 
   res.status(200).json({
     success: true,
-    message: 'Login successful',
-    data: { user: user.toSafeObject(), token }
+    message: 'Logged out successfully'
   });
-});
+};
 
 /**
  * @desc    Get the currently authenticated user
@@ -100,7 +123,7 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Authenticate with Google via idToken (from Google Login button) or authorization code
+ * @desc    Authenticate with Google via idToken or authorization code
  * @route   POST /api/auth/google
  * @access  Public
  */
@@ -119,7 +142,6 @@ export const googleAuth = asyncHandler(async (req, res) => {
   const oAuth2Client = getOAuth2Client();
 
   if (idToken) {
-    // 1. Verify Google ID token
     try {
       const ticket = await oAuth2Client.verifyIdToken({
         idToken,
@@ -134,7 +156,6 @@ export const googleAuth = asyncHandler(async (req, res) => {
       throw ApiError.unauthorized(`Invalid Google ID Token: ${err.message}`);
     }
   } else if (code) {
-    // 2. Exchange authorization code for tokens
     try {
       const { tokens } = await oAuth2Client.getToken(code);
       const ticket = await oAuth2Client.verifyIdToken({
@@ -155,7 +176,6 @@ export const googleAuth = asyncHandler(async (req, res) => {
     throw ApiError.badRequest('Unable to obtain email from Google account');
   }
 
-  // 3. Find existing user by googleId or email
   let user = await User.findOne({
     where: {
       [Op.or]: [
@@ -166,14 +186,12 @@ export const googleAuth = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    // Link googleId if user previously registered with email/password
     if (!user.googleId) {
       user.googleId = googleId;
       if (picture && !user.avatar) user.avatar = picture;
       await user.save();
     }
   } else {
-    // Create new user via Google
     user = await User.create({
       name: name || email.split('@')[0],
       email: email.toLowerCase().trim(),
@@ -184,17 +202,7 @@ export const googleAuth = asyncHandler(async (req, res) => {
     });
   }
 
-  // 4. Generate JWT application token
-  const token = generateToken(user.id);
-
-  res.status(200).json({
-    success: true,
-    message: 'Google authentication successful',
-    data: {
-      user: user.toSafeObject(),
-      token
-    }
-  });
+  sendAuthResponse(res, 200, 'Google authentication successful', user);
 });
 
 /**
@@ -276,8 +284,8 @@ export const googleAuthCallback = asyncHandler(async (req, res) => {
     }
 
     const token = generateToken(user.id);
+    res.cookie('token', token, getCookieOptions());
 
-    // Redirect user back to frontend with the auth token
     return res.redirect(`${config.clientUrl}/auth/callback?token=${token}`);
   } catch (err) {
     return res.redirect(`${config.clientUrl}/login?error=${encodeURIComponent(err.message)}`);

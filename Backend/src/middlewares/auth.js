@@ -1,12 +1,11 @@
 // ─────────────────────────────────────────────
-// JWT Authentication Middleware
+// JWT Authentication Middleware (Dual Token Defense)
 //
-// Protects routes by:
-//  1. Extracting the Bearer token from the
-//     Authorization header.
-//  2. Verifying the JWT signature and expiry.
-//  3. Fetching the user from the database.
-//  4. Attaching `req.user` for downstream use.
+// Layer 4 Defense:
+//  1. Inspects secure HttpOnly SameSite cookie first
+//  2. Falls back to Bearer token in Authorization header
+//  3. Verifies signature & expiry
+//  4. Hydrates req.user for downstream tenant scoping
 // ─────────────────────────────────────────────
 import { verifyToken } from '../utils/generateToken.js';
 import { User } from '../models/index.js';
@@ -14,37 +13,43 @@ import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 const protect = asyncHandler(async (req, _res, next) => {
-  // 1. Extract token
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw ApiError.unauthorized('Access denied. No token provided.');
+  let token = null;
+
+  // 1. Check HttpOnly cookie
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
+  // 2. Fall back to Authorization Bearer header
+  else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    throw ApiError.unauthorized('Authentication required: please log in or provide a valid token');
+  }
 
-  // 2. Verify & decode
+  // 3. Verify & decode
   try {
     const decoded = verifyToken(token);
 
-    // 3. Confirm user still exists
+    // 4. Confirm user still exists
     const user = await User.findByPk(decoded.id);
     if (!user) {
-      throw ApiError.unauthorized('User belonging to this token no longer exists.');
+      throw ApiError.unauthorized('User session invalid: user account no longer exists');
     }
 
-    // 4. Attach to request
+    // 5. Attach user to request for Anti-IDOR scoping
     req.user = user;
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
-      throw ApiError.unauthorized('Invalid token.');
+      throw ApiError.unauthorized('Invalid or malformed authentication token');
     }
     if (error.name === 'TokenExpiredError') {
-      throw ApiError.unauthorized('Token has expired. Please log in again.');
+      throw ApiError.unauthorized('Session has expired: please log in again');
     }
     throw error;
   }
 });
 
 export default protect;
-

@@ -1,19 +1,13 @@
 // ─────────────────────────────────────────────
-// Express Application
+// Express Application — 7-Layer Defense-in-Depth
 //
-// Assembles the middleware stack in the correct
-// order:
-//
-//  1. Reverse proxy trust (for accurate rate-limiting)
-//  2. Security headers (helmet)
-//  3. HTTP parameter pollution protection (hpp)
-//  4. CORS (flexible for local development)
-//  5. Body parsing (with 10 KB limit)
-//  6. Response compression
-//  7. Request logging
-//  8. Rate limiting
-//  9. Routes
-//  10. 404 & error handlers
+// 1. Network & HTTP Layer  ──► Helmet (HSTS, CSP, No-Sniff, Clickjacking)
+// 2. Traffic Defense       ──► Tiered Rate Limiting
+// 3. Origin Control        ──► Strict Whitelist CORS (No '*')
+// 4. Auth & Session        ──► HttpOnly SameSite Cookie + JWT
+// 5. Payload Defense       ──► Mass-Assignment Rejection + XSS Sanitizer
+// 6. Access Control        ──► Anti-IDOR Scoping (Database-level Tenant Check)
+// 7. Logging & Auditing    ──► PII Masking & Centralized Safe Error Handler
 // ─────────────────────────────────────────────
 import express from 'express';
 import cors from 'cors';
@@ -21,24 +15,48 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import compression from 'compression';
 import hpp from 'hpp';
+import cookieParser from 'cookie-parser';
 import { config } from './config/environment.js';
 import routes from './routes/index.js';
 import { apiLimiter } from './middlewares/rateLimiter.js';
 import { notFoundHandler } from './middlewares/notFoundHandler.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { maskPII } from './utils/sanitizer.js';
 
 const app = express();
 
-// ── 1. Trust Reverse Proxy (Render, Railway, Heroku, Nginx) ─
+// ── Reverse Proxy Trust ───────────────────────
 app.set('trust proxy', 1);
 
-// ── 2. Security headers ──────────────────────
-app.use(helmet());
+// ── 1. Network & HTTP Layer (Strict Helmet) ───
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'https://accounts.google.com'],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"]
+      }
+    },
+    crossOriginEmbedderPolicy: false,
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true
+    },
+    noSniff: true,
+    frameguard: { action: 'deny' }
+  })
+);
 
-// ── 3. Prevent HTTP parameter pollution ──────
+// ── 2. Parameter Pollution Protection ─────────
 app.use(hpp());
 
-// ── 4. CORS ──────────────────────────────────
+// ── 3. Origin Control (Strict Whitelist CORS) ─
 const allowedOrigins = [
   config.clientUrl,
   'http://localhost:3000',
@@ -47,49 +65,63 @@ const allowedOrigins = [
   'http://127.0.0.1:5173'
 ].filter(Boolean);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow non-browser tools (e.g. Postman, curl) or matched dev origins
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error(`CORS blocked request from origin: ${origin}`));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow mobile/CLI tools without origin, or verified whitelist
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Strict CORS: Origin ${origin} rejected`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  })
+);
 
-// ── 5. Body parsing (limit protects against payload bombs) ──
+// ── 4. Body & Cookie Parsing ──────────────────
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(cookieParser());
 
-// ── 6. Compress responses ────────────────────
+// ── 5. Compression ────────────────────────────
 app.use(compression());
 
-// ── 7. Logging ───────────────────────────────
-app.use(morgan(config.nodeEnv === 'development' ? 'dev' : 'combined'));
-
-// ── 8. Rate limiting on /api ─────────────────
+// ── 6. Traffic Defense (Rate Limiting) ────────
 app.use('/api', apiLimiter);
 
-// ── Root endpoint ────────────────────────────
+// ── 7. Logging & Auditing (PII Masking) ───────
+if (config.nodeEnv === 'development') {
+  app.use(morgan('dev'));
+} else {
+  // Production logging: safe PII-masked format
+  morgan.token('masked-body', (req) => {
+    return req.body ? JSON.stringify(maskPII(req.body)) : '-';
+  });
+  app.use(
+    morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" :masked-body')
+  );
+}
+
+// ── Root Endpoint ─────────────────────────────
 app.get('/', (_req, res) => {
   res.json({
     message: 'Welcome to the Lead Manager API',
+    security: '7-Layer Defense-in-Depth Active',
     version: '1.0.0',
     documentation: {
       health: 'GET /api/health',
-      auth: 'POST /api/auth/register, POST /api/auth/login, GET /api/auth/me',
-      leads: 'GET, POST /api/leads | GET, PUT, DELETE /api/leads/:id | GET /api/leads/dashboard/stats (requires Bearer token)'
+      auth: 'POST /api/auth/register, POST /api/auth/login, POST /api/auth/logout, POST /api/auth/google, GET /api/auth/me',
+      leads: 'GET, POST /api/leads | GET, PUT, DELETE /api/leads/:id | GET /api/leads/dashboard/stats'
     }
   });
 });
 
-// ── 9. API routes ────────────────────────────
+// ── API Routes (Anti-IDOR Scoping inside) ─────
 app.use('/api', routes);
 
-// ── 10. Error handling ───────────────────────
+// ── Centralized Error & 404 Handlers ──────────
 app.use(notFoundHandler);
 app.use(errorHandler);
 
