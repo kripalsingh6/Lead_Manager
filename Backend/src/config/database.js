@@ -11,32 +11,46 @@
 import { Sequelize } from 'sequelize';
 import { config } from './environment.js';
 
-const sequelize = new Sequelize(
-  config.db.name,
-  config.db.user,
-  config.db.password,
-  {
-    host: config.db.host,
-    port: config.db.port,
-    dialect: 'postgres',
+const dialectOptions = {
+  useUTC: true,
+  ...(config.dbUrl || process.env.DB_SSL === 'true'
+    ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      }
+    : {})
+};
 
-    // Only log SQL in development
-    logging: config.nodeEnv === 'development' ? console.log : false,
-
-    // Connection pool
-    pool: config.db.pool,
-
-    // Global model options
-    define: {
-      timestamps: true,   // adds created_at, updated_at
-      underscored: true   // snake_case columns in PostgreSQL
-    },
-
-    dialectOptions: {
-      useUTC: true
-    }
-  }
-);
+const sequelize = config.dbUrl
+  ? new Sequelize(config.dbUrl, {
+      dialect: 'postgres',
+      logging: config.nodeEnv === 'development' ? console.log : false,
+      pool: config.db.pool,
+      define: {
+        timestamps: true,
+        underscored: true
+      },
+      dialectOptions
+    })
+  : new Sequelize(
+      config.db.name,
+      config.db.user,
+      config.db.password,
+      {
+        host: config.db.host,
+        port: config.db.port,
+        dialect: 'postgres',
+        logging: config.nodeEnv === 'development' ? console.log : false,
+        pool: config.db.pool,
+        define: {
+          timestamps: true,
+          underscored: true
+        },
+        dialectOptions
+      }
+    );
 
 /**
  * Authenticate and synchronize models with retry mechanism.

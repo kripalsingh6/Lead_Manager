@@ -151,14 +151,16 @@ export const AuthModal = ({
         });
         window.google.accounts.id.prompt((notification) => {
           if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            window.location.href = 'http://localhost:5000/api/auth/google';
+            const backendBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+            window.location.href = `${backendBase}/api/auth/google`;
           }
         });
         setIsLoading(false);
         return;
       }
 
-      window.location.href = 'http://localhost:5000/api/auth/google';
+      const backendBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+      window.location.href = `${backendBase}/api/auth/google`;
     } catch (e) {
       console.error('Google auth error:', e);
       setError('Unable to initiate Google Sign-In. Please try again.');

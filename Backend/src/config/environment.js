@@ -10,15 +10,16 @@ export const config = {
   // ── Server ──────────────────────────────────
   port: parseInt(process.env.PORT, 10) || 5000,
   nodeEnv: process.env.NODE_ENV || 'development',
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+  clientUrl: process.env.CLIENT_URL || process.env.CORS_ORIGIN || 'http://localhost:3000',
 
   // ── PostgreSQL ──────────────────────────────
+  dbUrl: process.env.DATABASE_URL || '',
   db: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 5432,
-    name: process.env.DB_NAME || 'lead_manager',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
+    host: process.env.DB_HOST || process.env.PGHOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || process.env.PGPORT, 10) || 5432,
+    name: process.env.DB_NAME || process.env.PGDATABASE || 'lead_manager',
+    user: process.env.DB_USER || process.env.PGUSER || 'postgres',
+    password: process.env.DB_PASSWORD || process.env.PGPASSWORD || '',
 
     // Connection pool — sized for concurrent users
     pool: {

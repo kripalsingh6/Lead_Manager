@@ -1,5 +1,6 @@
 // Centralized API client helper
-const API_BASE = '/api';
+const RAW_API_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE = RAW_API_URL ? `${RAW_API_URL.replace(/\/+$/, '')}/api` : '/api';
 
 // Purge any legacy persistent tokens so sessions are strictly tab/window scoped
 try {
