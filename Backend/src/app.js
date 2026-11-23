@@ -57,19 +57,33 @@ app.use(
 app.use(hpp());
 
 // ── 3. Origin Control (Strict Whitelist CORS) ─
+const configuredOrigins = (config.clientUrl || '')
+  .split(',')
+  .map((url) => url.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
 const allowedOrigins = [
-  config.clientUrl,
+  ...configuredOrigins,
   'http://localhost:3000',
   'http://localhost:5173',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173'
-].filter(Boolean);
+];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow mobile/CLI tools without origin, or verified whitelist
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow mobile/CLI tools or requests without origin
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check explicit whitelist or vercel.app preview/production subdomains
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.vercel\.app$/.test(origin);
+
+      if (isAllowed) {
         return callback(null, true);
       }
       return callback(new Error(`Strict CORS: Origin ${origin} rejected`));
