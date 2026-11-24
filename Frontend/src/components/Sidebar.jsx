@@ -28,7 +28,7 @@ export const Sidebar = ({
   };
 
   return (
-    <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
+    <aside className={`sidebar ${isOpen ? 'sidebar-open mobile-open' : ''}`}>
       {/* Brand Header */}
       <div className="sidebar-brand-wrapper">
         <div
@@ -55,12 +55,13 @@ export const Sidebar = ({
           </div>
         </div>
 
-        {/* Mobile close button */}
+        {/* Sidebar close button (Universal across mobile, laptop, PC) */}
         <button
           type="button"
-          className="sidebar-mobile-close-btn"
+          className="sidebar-mobile-close-btn sidebar-close-btn"
           onClick={onClose}
           aria-label="Close menu"
+          title="Close navigation"
         >
           <X size={20} />
         </button>

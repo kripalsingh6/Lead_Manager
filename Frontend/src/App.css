@@ -23,16 +23,31 @@
   z-index: 20;
 }
 
-/* ── Dark Sidebar ───────────────────────────────── */
+/* ── Dark Sidebar (Universal Drawer: Mobile, Web, Laptop, PC) ── */
 .sidebar {
-  width: 250px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 85vw;
   background-color: var(--bg-sidebar);
   color: var(--text-sidebar);
   display: flex;
   flex-direction: column;
   padding: 24px 16px 16px 16px;
-  flex-shrink: 0;
+  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: none;
+  overflow-y: auto;
   border-right: 1px solid #1a2035;
+}
+
+.sidebar.sidebar-open,
+.sidebar.mobile-open {
+  transform: translateX(0);
+  box-shadow: 10px 0 35px rgba(0, 0, 0, 0.65);
 }
 
 .sidebar-brand {
@@ -2685,9 +2700,24 @@
    Supports Phones (360px-480px), Tablets (768px-1024px), Laptops
    ───────────────────────────────────────────────────────────── */
 
-/* Mobile menu toggle & drawer styling */
+/* Universal sidebar toggle & drawer styling (Mobile, Web, Laptop, PC) */
+.sidebar-toggle-btn,
 .mobile-menu-btn {
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle-btn:hover,
+.mobile-menu-btn:hover {
+  background-color: #f1f5f9;
+  color: var(--text-dark);
 }
 
 .sidebar-brand-wrapper {
@@ -2698,16 +2728,21 @@
   margin-bottom: 24px;
 }
 
+.sidebar-close-btn,
 .sidebar-mobile-close-btn {
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
   color: #94a3b8;
   padding: 6px;
   border-radius: 6px;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
+.sidebar-close-btn:hover,
 .sidebar-mobile-close-btn:hover {
   color: #f8fafc;
   background-color: rgba(255, 255, 255, 0.1);
@@ -2716,8 +2751,8 @@
 .sidebar-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(2px);
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(3px);
   z-index: 999;
   animation: fadeInBackdrop 0.2s ease-out;
 }
@@ -2729,33 +2764,6 @@
 
 /* Tablet & Mobile Breakpoint (≤ 900px) */
 @media (max-width: 900px) {
-  .mobile-menu-btn {
-    display: inline-flex;
-  }
-
-  .sidebar-mobile-close-btn {
-    display: inline-flex;
-  }
-
-  /* Off-canvas sidebar drawer */
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 280px;
-    max-width: 85vw;
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: none;
-    overflow-y: auto;
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(0);
-    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.5);
-  }
 
   .topbar {
     padding: 0 16px;

@@ -71,6 +71,13 @@ export const AuthModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Pre-flight client-side validation for minimum password length
+    if (!isLogin && formData.password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -96,7 +103,12 @@ export const AuthModal = ({
         onClose();
       }
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please check credentials.');
+      let errorMsg = err.message || 'Authentication failed. Please check credentials.';
+      // Surface specific nested validation field errors from backend if available
+      if (err.errors && Array.isArray(err.errors) && err.errors.length > 0) {
+        errorMsg = err.errors.map((e) => e.message).join('. ');
+      }
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -260,12 +272,18 @@ export const AuthModal = ({
                 type="password"
                 placeholder="••••••••"
                 required
+                minLength={isLogin ? 1 : 6}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="form-input"
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
               />
             </div>
+            {!isLogin && (
+              <span style={{ display: 'block', marginTop: 4, color: '#94a3b8', fontSize: 11 }}>
+                Must be at least 6 characters
+              </span>
+            )}
           </div>
 
           <button type="submit" className="btn-modal-primary w-full" disabled={isLoading}>

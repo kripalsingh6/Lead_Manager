@@ -25,7 +25,8 @@ const validate = (schema, source = 'body') => {
         field: detail.path.join('.'),
         message: detail.message
       }));
-      throw ApiError.badRequest('Validation failed: strict payload verification', errors);
+      const primaryMsg = errors[0]?.message || 'Validation failed: strict payload verification';
+      throw ApiError.badRequest(primaryMsg, errors);
     }
 
     // Safely replace validated and coerced values in Express 5

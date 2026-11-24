@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, ChevronDown, User, LogOut, LogIn, Globe, Menu } from 'lucide-react';
+import { Bell, ChevronDown, User, LogOut, LogIn, Globe, Menu, MoreVertical } from 'lucide-react';
 import { getEffectiveDisplayName } from '../api/client';
 
 export const Topbar = ({
@@ -10,22 +10,25 @@ export const Topbar = ({
   isSeeding,
   onNavigateToLanding,
   onProcessingAction,
-  onToggleMobileMenu
+  onToggleMobileMenu,
+  onToggleSidebar
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const displayName = getEffectiveDisplayName(user);
+  const handleToggle = onToggleSidebar || onToggleMobileMenu;
 
   return (
     <header className="topbar">
-      {/* Left side: Hamburger (Mobile) + Breadcrumbs */}
+      {/* Left side: Three Dots Menu Button (Universal across Mobile, Web, Laptop, PC) + Breadcrumbs */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
           type="button"
-          className="btn-icon mobile-menu-btn"
-          onClick={onToggleMobileMenu}
+          className="btn-icon sidebar-toggle-btn mobile-menu-btn"
+          onClick={handleToggle}
           aria-label="Toggle navigation menu"
+          title="Toggle Navigation Menu"
         >
-          <Menu size={20} />
+          <MoreVertical size={20} />
         </button>
 
         {/* Breadcrumbs */}

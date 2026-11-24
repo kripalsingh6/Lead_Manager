@@ -512,16 +512,16 @@ export function App() {
 
       {/* Main Workspace Row: Sidebar + Main Content (Sidebar stops above the footer) */}
       <div className="workspace-main-row">
-        {/* Mobile Backdrop */}
+        {/* Universal Backdrop for off-canvas Sidebar */}
         {isMobileMenuOpen && (
           <div
             className="sidebar-backdrop"
             onClick={() => setIsMobileMenuOpen(false)}
-            aria-label="Close mobile menu overlay"
+            aria-label="Close menu overlay"
           />
         )}
 
-        {/* Dark Sidebar (transforms to off-canvas drawer on mobile) */}
+        {/* Dark Sidebar (Universal toggleable drawer for mobile, web, laptop, PC) */}
         <Sidebar
           leadsCount={totalItems}
           onProcessingAction={handleProcessingAction}
@@ -546,6 +546,7 @@ export function App() {
           onNavigateToLanding={() => navigateTo('/')}
           onProcessingAction={handleProcessingAction}
           onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
+          onToggleSidebar={() => setIsMobileMenuOpen((prev) => !prev)}
         />
 
         <main className="dashboard-body">
