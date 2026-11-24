@@ -19,19 +19,19 @@ export const Topbar = ({
 
   return (
     <header className="topbar">
-      {/* Left side: Three Dots Menu Button (Universal across Mobile, Web, Laptop, PC) + Breadcrumbs */}
+      {/* Left side: Attractive 3-Line Menu Button + Breadcrumbs */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
           type="button"
-          className="btn-icon sidebar-toggle-btn mobile-menu-btn"
+          className="sidebar-toggle-btn mobile-menu-btn"
           onClick={handleToggle}
           aria-label="Toggle navigation menu"
           title="Toggle Navigation Menu"
         >
-          <MoreVertical size={20} />
+          <Menu size={20} strokeWidth={2.3} />
         </button>
 
-        {/* Breadcrumbs */}
+        {/* Breadcrumbs (Hidden on mobile screens) */}
         <div
           className="breadcrumbs"
           style={{ cursor: 'pointer' }}
