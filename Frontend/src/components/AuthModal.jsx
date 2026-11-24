@@ -215,46 +215,55 @@ export const AuthModal = ({
         <form onSubmit={handleSubmit} className="modal-form">
           {!isLogin && (
             <div className="form-group">
-              <label className="form-label">Full Name (Optional)</label>
+              <label className="form-label" htmlFor="auth-name">Full Name (Optional)</label>
               <div className="input-with-icon">
                 <User size={16} className="input-icon" />
                 <input
+                  id="auth-name"
+                  name="name"
                   type="text"
                   placeholder="e.g. Kripal Singh"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="form-input"
+                  autoComplete="name"
                 />
               </div>
             </div>
           )}
 
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label" htmlFor="auth-email">Email</label>
             <div className="input-with-icon">
               <Mail size={16} className="input-icon" />
               <input
+                id="auth-email"
+                name="email"
                 type="email"
                 placeholder="you@company.com"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="form-input"
+                autoComplete="email"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password</label>
+            <label className="form-label" htmlFor="auth-password">Password</label>
             <div className="input-with-icon">
               <Lock size={16} className="input-icon" />
               <input
+                id="auth-password"
+                name="password"
                 type="password"
                 placeholder="••••••••"
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="form-input"
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
               />
             </div>
           </div>

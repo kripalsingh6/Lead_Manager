@@ -53,20 +53,26 @@ export const LeadsTable = ({
           <div className="search-input-wrapper">
             <Search size={16} className="search-icon" />
             <input
+              id="leads-search-input"
+              name="search"
               type="text"
               placeholder="Search by name, company, email..."
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               className="search-input"
+              aria-label="Search leads"
             />
           </div>
 
           {/* Status Filter Dropdown */}
           <div className="select-wrapper">
             <select
+              id="leads-status-filter"
+              name="statusFilter"
               value={statusFilter}
               onChange={(e) => onStatusFilterChange(e.target.value)}
               className="filter-select"
+              aria-label="Filter by lead status"
             >
               <option value="">All statuses</option>
               <option value="New">New</option>
@@ -170,9 +176,12 @@ export const LeadsTable = ({
         <div className="footer-pagination-controls">
           <div className="select-wrapper limit-select-wrapper">
             <select
+              id="leads-pagination-limit"
+              name="paginationLimit"
               value={limit}
               onChange={(e) => onLimitChange(Number(e.target.value))}
               className="limit-select"
+              aria-label="Leads per page"
             >
               <option value={5}>5 per page</option>
               <option value={8}>8 per page</option>

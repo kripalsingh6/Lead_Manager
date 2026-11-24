@@ -99,6 +99,7 @@ export const OnboardingFlow = ({ initialName = '', onComplete, isSubmitting = fa
                   <User size={18} className="input-icon" />
                   <input
                     id="user-name-input"
+                    name="userName"
                     type="text"
                     className="form-input onboarding-input"
                     placeholder="e.g. Kripal Singh"
@@ -109,13 +110,16 @@ export const OnboardingFlow = ({ initialName = '', onComplete, isSubmitting = fa
                     }}
                     autoFocus
                     required
+                    autoComplete="name"
                   />
                 </div>
                 {error && <span className="field-error-msg">{error}</span>}
               </div>
 
-              <label className="onboarding-checkbox-label">
+              <label className="onboarding-checkbox-label" htmlFor="subscribe-updates-input">
                 <input
+                  id="subscribe-updates-input"
+                  name="subscribeUpdates"
                   type="checkbox"
                   checked={subscribeUpdates}
                   onChange={(e) => setSubscribeUpdates(e.target.checked)}
@@ -179,8 +183,10 @@ export const OnboardingFlow = ({ initialName = '', onComplete, isSubmitting = fa
 
               {selectedRole === 'Other' && (
                 <div className="form-group animate-fadeIn" style={{ marginTop: '1rem' }}>
-                  <label className="form-label">Specify Your Role</label>
+                  <label className="form-label" htmlFor="custom-role-input">Specify Your Role</label>
                   <input
+                    id="custom-role-input"
+                    name="customRole"
                     type="text"
                     className="form-input"
                     placeholder="e.g. Sales Director, Growth Specialist"
@@ -200,6 +206,7 @@ export const OnboardingFlow = ({ initialName = '', onComplete, isSubmitting = fa
                   <Building2 size={18} className="input-icon" />
                   <input
                     id="domain-input"
+                    name="domain"
                     type="text"
                     className="form-input onboarding-input"
                     placeholder="e.g. SaaS, E-commerce, Fintech, Healthcare, Agency"

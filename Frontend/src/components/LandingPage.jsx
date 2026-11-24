@@ -126,12 +126,16 @@ export const LandingPage = ({ onGetStarted, onLogin, currentUser, onGoToDashboar
 
             <form onSubmit={handleSubmit} className="hero-cta-form">
               <input
+                id="hero-business-email"
+                name="email"
                 type="email"
                 placeholder="Enter your business email"
                 className="hero-email-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
+                aria-label="Business Email"
               />
               <button type="submit" className="hero-cta-button">
                 GET STARTED FREE

@@ -81,10 +81,12 @@ export const AddLeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-label" htmlFor="add-lead-name">
               Name <span className="text-danger">*</span>
             </label>
             <input
+              id="add-lead-name"
+              name="name"
               type="text"
               placeholder="Maya Patel"
               value={formData.name}
@@ -95,10 +97,12 @@ export const AddLeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-label" htmlFor="add-lead-email">
               Email <span className="text-danger">*</span>
             </label>
             <input
+              id="add-lead-email"
+              name="email"
               type="email"
               placeholder="maya@company.com"
               value={formData.email}
@@ -109,8 +113,10 @@ export const AddLeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Phone</label>
+            <label className="form-label" htmlFor="add-lead-phone">Phone</label>
             <input
+              id="add-lead-phone"
+              name="phone"
               type="text"
               placeholder="+1 415 555 0109"
               value={formData.phone}
@@ -120,8 +126,10 @@ export const AddLeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Company</label>
+            <label className="form-label" htmlFor="add-lead-company">Company</label>
             <input
+              id="add-lead-company"
+              name="company"
               type="text"
               placeholder="Brightside"
               value={formData.company}
@@ -131,8 +139,10 @@ export const AddLeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Source</label>
+            <label className="form-label" htmlFor="add-lead-source">Source</label>
             <select
+              id="add-lead-source"
+              name="source"
               value={formData.source}
               onChange={(e) => handleChange('source', e.target.value)}
               className="form-select"
@@ -147,8 +157,10 @@ export const AddLeadModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Status</label>
+            <label className="form-label" htmlFor="add-lead-status">Status</label>
             <select
+              id="add-lead-status"
+              name="status"
               value={formData.status}
               onChange={(e) => handleChange('status', e.target.value)}
               className="form-select"

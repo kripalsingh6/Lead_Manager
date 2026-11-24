@@ -77,10 +77,12 @@ export const EditLeadModal = ({ isOpen, lead, onClose, onSubmit, isSubmitting })
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-label" htmlFor="edit-lead-name">
               Name <span className="text-danger">*</span>
             </label>
             <input
+              id="edit-lead-name"
+              name="name"
               type="text"
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
@@ -90,10 +92,12 @@ export const EditLeadModal = ({ isOpen, lead, onClose, onSubmit, isSubmitting })
           </div>
 
           <div className="form-group">
-            <label className="form-label">
+            <label className="form-label" htmlFor="edit-lead-email">
               Email <span className="text-danger">*</span>
             </label>
             <input
+              id="edit-lead-email"
+              name="email"
               type="email"
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
@@ -103,8 +107,10 @@ export const EditLeadModal = ({ isOpen, lead, onClose, onSubmit, isSubmitting })
           </div>
 
           <div className="form-group">
-            <label className="form-label">Phone</label>
+            <label className="form-label" htmlFor="edit-lead-phone">Phone</label>
             <input
+              id="edit-lead-phone"
+              name="phone"
               type="text"
               value={formData.phone}
               onChange={(e) => handleChange('phone', e.target.value)}
@@ -113,8 +119,10 @@ export const EditLeadModal = ({ isOpen, lead, onClose, onSubmit, isSubmitting })
           </div>
 
           <div className="form-group">
-            <label className="form-label">Company</label>
+            <label className="form-label" htmlFor="edit-lead-company">Company</label>
             <input
+              id="edit-lead-company"
+              name="company"
               type="text"
               value={formData.company}
               onChange={(e) => handleChange('company', e.target.value)}
@@ -123,8 +131,10 @@ export const EditLeadModal = ({ isOpen, lead, onClose, onSubmit, isSubmitting })
           </div>
 
           <div className="form-group">
-            <label className="form-label">Source</label>
+            <label className="form-label" htmlFor="edit-lead-source">Source</label>
             <select
+              id="edit-lead-source"
+              name="source"
               value={formData.source}
               onChange={(e) => handleChange('source', e.target.value)}
               className="form-select"
@@ -139,8 +149,10 @@ export const EditLeadModal = ({ isOpen, lead, onClose, onSubmit, isSubmitting })
           </div>
 
           <div className="form-group">
-            <label className="form-label">Status</label>
+            <label className="form-label" htmlFor="edit-lead-status">Status</label>
             <select
+              id="edit-lead-status"
+              name="status"
               value={formData.status}
               onChange={(e) => handleChange('status', e.target.value)}
               className="form-select"
