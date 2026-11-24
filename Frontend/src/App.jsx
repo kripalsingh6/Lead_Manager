@@ -71,6 +71,7 @@ export function App() {
   const [currentUser, setCurrentUser] = useState(() => getStoredUser());
   const [currentView, setCurrentView] = useState('landing');
   const [isOnboarding, setIsOnboarding] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [authModalConfig, setAuthModalConfig] = useState({
     isOpen: false,
     isLogin: true,
@@ -511,10 +512,21 @@ export function App() {
 
       {/* Main Workspace Row: Sidebar + Main Content (Sidebar stops above the footer) */}
       <div className="workspace-main-row">
-        {/* Dark Sidebar */}
+        {/* Mobile Backdrop */}
+        {isMobileMenuOpen && (
+          <div
+            className="sidebar-backdrop"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close mobile menu overlay"
+          />
+        )}
+
+        {/* Dark Sidebar (transforms to off-canvas drawer on mobile) */}
         <Sidebar
           leadsCount={totalItems}
           onProcessingAction={handleProcessingAction}
+          isOpen={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
         />
 
         {/* Main Content Area */}
@@ -533,6 +545,7 @@ export function App() {
           isSeeding={isSeeding}
           onNavigateToLanding={() => navigateTo('/')}
           onProcessingAction={handleProcessingAction}
+          onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
         />
 
         <main className="dashboard-body">

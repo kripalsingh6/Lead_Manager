@@ -9,32 +9,61 @@ import {
   Settings,
   HelpCircle,
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  X
 } from 'lucide-react';
 
-export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, onProcessingAction }) => {
+export const Sidebar = ({
+  activeTab = 'overview',
+  onTabChange,
+  leadsCount = 0,
+  onProcessingAction,
+  isOpen = false,
+  onClose
+}) => {
+  const handleNavClick = (tabName, actionLabel) => {
+    if (onClose) onClose();
+    if (tabName && onTabChange) onTabChange(tabName);
+    if (actionLabel && onProcessingAction) onProcessingAction(actionLabel);
+  };
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
       {/* Brand Header */}
-      <div
-        className="sidebar-brand"
-        style={{ cursor: 'pointer' }}
-        onClick={() => onProcessingAction && onProcessingAction('Dashboard Navigation')}
-      >
-        <div className="brand-logo">
-          <svg
-            className="pulse-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-          </svg>
-          <span className="brand-name">LEAD</span>
+      <div className="sidebar-brand-wrapper">
+        <div
+          className="sidebar-brand"
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            if (onClose) onClose();
+            onProcessingAction && onProcessingAction('Dashboard Navigation');
+          }}
+        >
+          <div className="brand-logo">
+            <svg
+              className="pulse-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+            <span className="brand-name">LEAD</span>
+          </div>
         </div>
+
+        {/* Mobile close button */}
+        <button
+          type="button"
+          className="sidebar-mobile-close-btn"
+          onClick={onClose}
+          aria-label="Close menu"
+        >
+          <X size={20} />
+        </button>
       </div>
 
       {/* Workspace / Dashboard Selector */}
@@ -56,7 +85,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, o
         <nav className="nav-menu">
           <button
             className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => onTabChange && onTabChange('overview')}
+            onClick={() => handleNavClick('overview')}
           >
             <Layers size={18} />
             <span>Overview</span>
@@ -64,7 +93,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, o
 
           <button
             className={`nav-item ${activeTab === 'monitors' ? 'active' : ''}`}
-            onClick={() => (onProcessingAction ? onProcessingAction('Monitors') : onTabChange && onTabChange('monitors'))}
+            onClick={() => handleNavClick('monitors', 'Monitors')}
           >
             <Activity size={18} />
             <span>Monitors</span>
@@ -73,7 +102,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, o
 
           <button
             className={`nav-item ${activeTab === 'infrastructure' ? 'active' : ''}`}
-            onClick={() => (onProcessingAction ? onProcessingAction('Infrastructure') : onTabChange && onTabChange('infrastructure'))}
+            onClick={() => handleNavClick('infrastructure', 'Infrastructure')}
           >
             <Cpu size={18} />
             <span>Infrastructure</span>
@@ -81,7 +110,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, o
 
           <button
             className={`nav-item ${activeTab === 'services' ? 'active' : ''}`}
-            onClick={() => (onProcessingAction ? onProcessingAction('Services') : onTabChange && onTabChange('services'))}
+            onClick={() => handleNavClick('services', 'Services')}
           >
             <Server size={18} />
             <span>Services</span>
@@ -89,7 +118,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, o
 
           <button
             className={`nav-item ${activeTab === 'incidents' ? 'active' : ''}`}
-            onClick={() => (onProcessingAction ? onProcessingAction('Incidents') : onTabChange && onTabChange('incidents'))}
+            onClick={() => handleNavClick('incidents', 'Incidents')}
           >
             <AlertTriangle size={18} />
             <span>Incidents</span>
@@ -98,7 +127,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, o
 
           <button
             className={`nav-item ${activeTab === 'activity' ? 'active' : ''}`}
-            onClick={() => (onProcessingAction ? onProcessingAction('Activity Log') : onTabChange && onTabChange('activity'))}
+            onClick={() => handleNavClick('activity', 'Activity Log')}
           >
             <History size={18} />
             <span>Activity log</span>
@@ -121,7 +150,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, o
             className="usage-link"
             onClick={(e) => {
               e.preventDefault();
-              onProcessingAction && onProcessingAction('Manage Plan');
+              handleNavClick(null, 'Manage Plan');
             }}
           >
             Manage your plan <ExternalLink size={12} />
@@ -131,14 +160,14 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, o
         <nav className="footer-nav">
           <button
             className="footer-nav-item"
-            onClick={() => onProcessingAction && onProcessingAction('Settings')}
+            onClick={() => handleNavClick(null, 'Settings')}
           >
             <Settings size={16} />
             <span>Settings</span>
           </button>
           <button
             className="footer-nav-item"
-            onClick={() => onProcessingAction && onProcessingAction('Help & Documentation')}
+            onClick={() => handleNavClick(null, 'Help & Documentation')}
           >
             <HelpCircle size={16} />
             <span>Help & documentation</span>
@@ -148,7 +177,7 @@ export const Sidebar = ({ activeTab = 'overview', onTabChange, leadsCount = 0, o
         <div
           className="system-status"
           style={{ cursor: 'pointer' }}
-          onClick={() => onProcessingAction && onProcessingAction('System Status')}
+          onClick={() => handleNavClick(null, 'System Status')}
         >
           <span className="status-indicator online"></span>
           <span>All systems operational</span>

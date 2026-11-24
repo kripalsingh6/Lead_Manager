@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, ChevronDown, User, LogOut, LogIn, Globe } from 'lucide-react';
+import { Bell, ChevronDown, User, LogOut, LogIn, Globe, Menu } from 'lucide-react';
 import { getEffectiveDisplayName } from '../api/client';
 
 export const Topbar = ({
@@ -9,22 +9,35 @@ export const Topbar = ({
   onSeedSampleData,
   isSeeding,
   onNavigateToLanding,
-  onProcessingAction
+  onProcessingAction,
+  onToggleMobileMenu
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const displayName = getEffectiveDisplayName(user);
 
   return (
     <header className="topbar">
-      {/* Breadcrumbs */}
-      <div
-        className="breadcrumbs"
-        style={{ cursor: 'pointer' }}
-        onClick={() => onProcessingAction && onProcessingAction('Dashboard Navigation')}
-      >
-        <span className="crumb-parent">Dashboard</span>
-        <span className="crumb-divider">/</span>
-        <span className="crumb-current">Lead Manager</span>
+      {/* Left side: Hamburger (Mobile) + Breadcrumbs */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button
+          type="button"
+          className="btn-icon mobile-menu-btn"
+          onClick={onToggleMobileMenu}
+          aria-label="Toggle navigation menu"
+        >
+          <Menu size={20} />
+        </button>
+
+        {/* Breadcrumbs */}
+        <div
+          className="breadcrumbs"
+          style={{ cursor: 'pointer' }}
+          onClick={() => onProcessingAction && onProcessingAction('Dashboard Navigation')}
+        >
+          <span className="crumb-parent">Dashboard</span>
+          <span className="crumb-divider">/</span>
+          <span className="crumb-current">Lead Manager</span>
+        </div>
       </div>
 
       {/* Right Controls */}
